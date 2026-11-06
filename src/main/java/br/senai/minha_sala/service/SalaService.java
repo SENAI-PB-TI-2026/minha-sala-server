@@ -14,25 +14,30 @@ import java.util.List;
 public class SalaService {
     private final SalaRepository salaRepository;
 
+    /** Inicializa o serviço com o repositório de persistência de salas. */
     public SalaService(SalaRepository salaRepository) {
         this.salaRepository = salaRepository;
     }
 
+    /** Retorna todas as salas persistidas. */
     public List<Sala> listar() {
         return salaRepository.findAll();
     }
 
+    /** Busca a sala pelo ID e lança uma resposta 404 se ela não existe. */
     public Sala buscarPorId(Long id) {
         return salaRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
     }
 
+    /** Persiste uma nova sala, descartando qualquer ID fornecido pelo cliente. */
     @Transactional
     public Sala criar(Sala sala) {
         sala.setId(null);
         return salaRepository.save(sala);
     }
 
+    /** Atualiza nome e capacidade de uma sala existente, preservando seu ID. */
     @Transactional
     public Sala atualizar(Long id, Sala dados) {
         Sala sala = buscarPorId(id);
@@ -41,6 +46,7 @@ public class SalaService {
         return salaRepository.save(sala);
     }
 
+    /** Remove uma sala existente; lança uma resposta 404 para ID desconhecido. */
     @Transactional
     public void excluir(Long id) {
         salaRepository.delete(buscarPorId(id));

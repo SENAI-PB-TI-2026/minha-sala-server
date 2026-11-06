@@ -15,20 +15,24 @@ import java.util.List;
 public class SalaController {
     private final SalaService salaService;
 
+    /** Inicializa o controller com o serviço responsável pelas salas. */
     public SalaController(SalaService salaService) {
         this.salaService = salaService;
     }
 
+    /** Retorna todas as salas cadastradas. */
     @GetMapping
     public List<Sala> listar() {
         return salaService.listar();
     }
 
+    /** Consulta uma sala pelo ID; retorna 404 quando ela não existe. */
     @GetMapping("/{id}")
     public Sala buscarPorId(@PathVariable Long id) {
         return salaService.buscarPorId(id);
     }
 
+    /** Valida e cria uma sala, retornando 201 e sua URL no cabeçalho Location. */
     @PostMapping
     public ResponseEntity<Sala> criar(@Valid @RequestBody Sala sala) {
         Sala criada = salaService.criar(sala);
@@ -37,11 +41,13 @@ public class SalaController {
         return ResponseEntity.created(location).body(criada);
     }
 
+    /** Valida os dados e atualiza a sala identificada pela URL. */
     @PutMapping("/{id}")
     public Sala atualizar(@PathVariable Long id, @Valid @RequestBody Sala sala) {
         return salaService.atualizar(id, sala);
     }
 
+    /** Exclui a sala informada e retorna 204, ou 404 se ela não existe. */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@PathVariable Long id) {
         salaService.excluir(id);
