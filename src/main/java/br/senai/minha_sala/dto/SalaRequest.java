@@ -1,0 +1,14 @@
+package br.senai.minha_sala.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+
+public record SalaRequest(
+        @NotBlank(message = "O nome da sala deve ser informado")
+        @Size(max = 255, message = "O nome da sala deve ter no máximo 255 caracteres")
+        String nome,
+        @Positive(message = "A capacidade deve ser maior que zero")
+        int capacidade
+) {
+}
