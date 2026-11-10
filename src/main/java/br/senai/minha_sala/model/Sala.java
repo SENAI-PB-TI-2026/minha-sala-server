@@ -1,5 +1,6 @@
 package br.senai.minha_sala.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,6 +26,7 @@ public class Sala {
     private Long id;
     @NotBlank(message = "O nome da sala deve ser informado")
     @Size(max = 255, message = "O nome da sala deve ter no máximo 255 caracteres")
+    @Column(nullable = false)
     private String nome;
     @Positive(message = "A capacidade deve ser maior que zero")
     private int capacidade;
