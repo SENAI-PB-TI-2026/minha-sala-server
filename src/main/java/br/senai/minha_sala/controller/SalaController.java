@@ -1,6 +1,7 @@
 package br.senai.minha_sala.controller;
 
-import br.senai.minha_sala.model.Sala;
+import br.senai.minha_sala.dto.SalaRequest;
+import br.senai.minha_sala.dto.SalaResponse;
 import br.senai.minha_sala.service.SalaService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -22,28 +23,28 @@ public class SalaController {
 
     /** Retorna todas as salas cadastradas. */
     @GetMapping
-    public List<Sala> listar() {
+    public List<SalaResponse> listar() {
         return salaService.listar();
     }
 
     /** Consulta uma sala pelo ID; retorna 404 quando ela não existe. */
     @GetMapping("/{id}")
-    public Sala buscarPorId(@PathVariable Long id) {
+    public SalaResponse buscarPorId(@PathVariable Long id) {
         return salaService.buscarPorId(id);
     }
 
     /** Valida e cria uma sala, retornando 201 e sua URL no cabeçalho Location. */
     @PostMapping
-    public ResponseEntity<Sala> criar(@Valid @RequestBody Sala sala) {
-        Sala criada = salaService.criar(sala);
+    public ResponseEntity<SalaResponse> criar(@Valid @RequestBody SalaRequest sala) {
+        SalaResponse criada = salaService.criar(sala);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{id}").buildAndExpand(criada.getId()).toUri();
+                .path("/{id}").buildAndExpand(criada.id()).toUri();
         return ResponseEntity.created(location).body(criada);
     }
 
     /** Valida os dados e atualiza a sala identificada pela URL. */
     @PutMapping("/{id}")
-    public Sala atualizar(@PathVariable Long id, @Valid @RequestBody Sala sala) {
+    public SalaResponse atualizar(@PathVariable Long id, @Valid @RequestBody SalaRequest sala) {
         return salaService.atualizar(id, sala);
     }
 

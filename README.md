@@ -12,8 +12,6 @@ Em desenvolvimento.
 
 ## API de salas
 
-O MVC REST utiliza `Sala`, `SalaRepository`, `SalaService` e `SalaController`, com respostas JSON.
-
 | Método | Rota | Resultado |
 | --- | --- | --- |
 | GET | `/salas` | Lista de salas (200) |
@@ -38,7 +36,7 @@ Execute `./mvnw.cmd test` para verificar o CRUD e as validações com H2 em mem�
 
 ### Configuração do banco
 
-Copie `.env.example` para `.env` na raiz do projeto e ajuste `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` e `DB_DDL_AUTO`. No PowerShell:
+Copie `.env.example` para `.env` na raiz do projeto e ajuste `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`. No PowerShell:
 
 ```powershell
 Copy-Item .env.example .env
