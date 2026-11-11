@@ -56,6 +56,19 @@ class SalaControllerTests {
         assertThat(repository.count()).isZero();
     }
 
+    /** Verifica a atualização do nome e capacidade conforme especificação SCRUM-215. */
+    @Test
+    void deveAtualizarInformacoesDaSalaComSucesso() throws Exception {
+        var criada = request("POST", "/salas", "{\"nome\":\"Sala Antiga\",\"capacidade\":20}");
+        String caminho = URI.create(criada.headers().firstValue("Location").orElseThrow()).getPath();
+
+        var atualizada = request("PUT", caminho, "{\"nome\":\"Laboratório de Informática 02\",\"capacidade\":35}");
+
+        assertThat(atualizada.statusCode()).isEqualTo(200);
+        assertThat(atualizada.body()).contains("Laboratório de Informática 02", "\"capacidade\":35");
+        assertThat(request("GET", caminho, null).body()).isEqualTo(atualizada.body());
+    }
+
     /** Verifica que dados inválidos retornam 400 e preservam o banco. */
     @Test
     void deveRejeitarDadosInvalidosSemAlterarBanco() throws Exception {
