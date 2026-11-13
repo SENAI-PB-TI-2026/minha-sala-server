@@ -2,6 +2,7 @@ package br.senai.minha_sala.controller;
 
 import br.senai.minha_sala.dto.TurmaRequest;
 import br.senai.minha_sala.dto.TurmaResponse;
+import br.senai.minha_sala.dto.QuantidadeAlunosRequest;
 import br.senai.minha_sala.service.TurmaService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +47,13 @@ public class TurmaController {
     @PutMapping("/{id}")
     public TurmaResponse atualizar(@PathVariable Long id, @Valid @RequestBody TurmaRequest turma) {
         return turmaService.atualizar(id, turma);
+    }
+
+    /** Atualiza somente a quantidade de alunos da turma identificada pela URL. */
+    @PatchMapping("/{id}/quantidade-alunos")
+    public TurmaResponse atualizarQuantidadeAlunos(@PathVariable Long id,
+                                                   @Valid @RequestBody QuantidadeAlunosRequest dados) {
+        return turmaService.atualizarQuantidadeAlunos(id, dados.quantidadeAlunos());
     }
 
     /** Exclui a turma informada e retorna 204, ou 404 se ela não existe. */

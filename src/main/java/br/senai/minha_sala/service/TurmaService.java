@@ -53,6 +53,14 @@ public class TurmaService {
         return toResponse(turmaRepository.save(turma));
     }
 
+    /** Atualiza somente a quantidade de alunos e retorna os dados persistidos da turma. */
+    @Transactional
+    public TurmaResponse atualizarQuantidadeAlunos(Long id, int quantidadeAlunos) {
+        Turma turma = buscarEntidadePorId(id);
+        turma.setQuantidadeAlunos(quantidadeAlunos);
+        return toResponse(turmaRepository.save(turma));
+    }
+
     /** Remove uma turma existente; lança uma resposta 404 para ID desconhecido. */
     @Transactional
     public void excluir(Long id) {
