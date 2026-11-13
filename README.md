@@ -28,7 +28,28 @@ Corpo para criar ou atualizar:
 
 O nome deve conter texto e a capacidade deve ser positiva. Dados inválidos retornam 400; IDs inexistentes retornam 404. O ID é gerado na criação e definido pela URL na atualização.
 
-Com JDK 25 configurado no `JAVA_HOME`, execute `./mvnw.cmd spring-boot:run` no Windows. A API fica em `http://localhost:8080/salas` e usa H2 persistido em `./data/minha-sala`.
+## API de turmas
+
+| Método | Rota | Resultado |
+| --- | --- | --- |
+| GET | `/turmas` | Lista de turmas (200) |
+| GET | `/turmas/{id}` | Consulta por ID (200) |
+| POST | `/turmas` | Criação (201 e cabeçalho Location) |
+| PUT | `/turmas/{id}` | Atualização (200) |
+| PATCH | `/turmas/{id}/quantidade-alunos` | Atualiza somente a quantidade de alunos (200) |
+| DELETE | `/turmas/{id}` | Exclusão (204) |
+
+Corpo para criar ou atualizar:
+
+```json
+{"nome": "Turma A", "curso": "Desenvolvimento de Sistemas", "quantidadeAlunos": 30}
+```
+
+O nome e o curso devem conter texto e a quantidade de alunos deve ser positiva. Dados inválidos retornam 400; IDs inexistentes retornam 404. O ID é gerado na criação e definido pela URL na atualização.
+
+Para atualizar somente a quantidade de alunos, envie `PATCH /turmas/{id}/quantidade-alunos` com `{"quantidadeAlunos": 35}`. A operação retorna a turma atualizada; uma consulta `GET /turmas/{id}` apresenta a nova quantidade.
+
+Com JDK 25 configurado no `JAVA_HOME`, execute `./mvnw.cmd spring-boot:run` no Windows. As APIs ficam em `http://localhost:8080/salas` e `http://localhost:8080/turmas` e usam H2 persistido em `./data/minha-sala`.
 
 Execute `./mvnw.cmd test` para verificar o CRUD e as validações com H2 em memória.
 
