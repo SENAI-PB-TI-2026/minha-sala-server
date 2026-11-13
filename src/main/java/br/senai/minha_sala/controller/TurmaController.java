@@ -3,6 +3,8 @@ package br.senai.minha_sala.controller;
 import br.senai.minha_sala.dto.TurmaRequest;
 import br.senai.minha_sala.dto.TurmaResponse;
 import br.senai.minha_sala.dto.QuantidadeAlunosRequest;
+import br.senai.minha_sala.dto.AulaResponse;
+import br.senai.minha_sala.service.AulaService;
 import br.senai.minha_sala.service.TurmaService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -16,10 +18,12 @@ import java.util.List;
 @RequestMapping("/turmas")
 public class TurmaController {
     private final TurmaService turmaService;
+    private final AulaService aulaService;
 
     /** Inicializa o controller com o serviço responsável pelas turmas. */
-    public TurmaController(TurmaService turmaService) {
+    public TurmaController(TurmaService turmaService, AulaService aulaService) {
         this.turmaService = turmaService;
+        this.aulaService = aulaService;
     }
 
     /** Retorna todas as turmas cadastradas. */
@@ -32,6 +36,12 @@ public class TurmaController {
     @GetMapping("/{id}")
     public TurmaResponse buscarPorId(@PathVariable Long id) {
         return turmaService.buscarPorId(id);
+    }
+
+    /** Retorna apenas as aulas cadastradas da turma informada. */
+    @GetMapping("/{id}/aulas")
+    public List<AulaResponse> listarAulas(@PathVariable Long id) {
+        return aulaService.listarPorTurma(id);
     }
 
     /** Valida e cria uma turma, retornando 201 e sua URL no cabeçalho Location. */
