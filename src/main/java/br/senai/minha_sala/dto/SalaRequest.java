@@ -13,6 +13,8 @@ public record SalaRequest(
         @Positive(message = "A capacidade deve ser maior que zero")
         int capacidade,
         @NotNull(message = "O tipo da sala é obrigatório")
-        TipoSala tipo
+        TipoSala tipo,
+        @Size(max = 1000, message = "Os recursos devem ter no máximo 1000 caracteres")
+        String recursos
 ) {
 }

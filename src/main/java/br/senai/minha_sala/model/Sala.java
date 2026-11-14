@@ -35,5 +35,8 @@ public class Sala {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TipoSala tipo;
+    @Size(max = 1000, message = "Os recursos devem ter no máximo 1000 caracteres")
+    @Column(columnDefinition = "TEXT")
+    private String recursos;
 
 }
