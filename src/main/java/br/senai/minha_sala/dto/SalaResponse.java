@@ -1,4 +1,6 @@
 package br.senai.minha_sala.dto;
 
-public record SalaResponse(Long id, String nome, int capacidade) {
+import br.senai.minha_sala.model.TipoSala;
+
+public record SalaResponse(Long id, String nome, int capacidade, TipoSala tipo, String recursos) {
 }

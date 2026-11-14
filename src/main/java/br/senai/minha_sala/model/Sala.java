@@ -2,6 +2,8 @@ package br.senai.minha_sala.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -30,5 +32,11 @@ public class Sala {
     private String nome;
     @Positive(message = "A capacidade deve ser maior que zero")
     private int capacidade;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TipoSala tipo;
+    @Size(max = 1000, message = "Os recursos devem ter no máximo 1000 caracteres")
+    @Column(columnDefinition = "TEXT")
+    private String recursos;
 
 }
