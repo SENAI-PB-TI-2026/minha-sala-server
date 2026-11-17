@@ -1,6 +1,9 @@
 package br.senai.minha_sala.controller;
 
+import br.senai.minha_sala.dto.BloqueioRequest;
+import br.senai.minha_sala.dto.BloqueioResponse;
 import br.senai.minha_sala.dto.ConsultaOcupacaoSalasResponse;
+import br.senai.minha_sala.dto.OcupacaoRequest;
 import br.senai.minha_sala.dto.OcupacaoResponse;
 import br.senai.minha_sala.dto.SalaRequest;
 import br.senai.minha_sala.dto.SalaResponse;
@@ -41,6 +44,28 @@ public class SalaController {
         OcupacaoResponse ocupacao = salaService.registrarAulaEmSala(salaId, aulaId);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .build().toUri();
+        return ResponseEntity.created(location).body(ocupacao);
+    }
+
+    /** Cadastra um bloqueio fixo para a sala. */
+    @PostMapping("/{salaId}/bloqueios")
+    public ResponseEntity<BloqueioResponse> criarBloqueio(
+            @PathVariable Long salaId,
+            @Valid @RequestBody BloqueioRequest request) {
+        BloqueioResponse bloqueio = salaService.criarBloqueio(salaId, request);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}").buildAndExpand(bloqueio.id()).toUri();
+        return ResponseEntity.created(location).body(bloqueio);
+    }
+
+    /** Cadastra uma ocupação direta na sala. */
+    @PostMapping("/{salaId}/ocupacoes")
+    public ResponseEntity<OcupacaoResponse> criarOcupacao(
+            @PathVariable Long salaId,
+            @Valid @RequestBody OcupacaoRequest request) {
+        OcupacaoResponse ocupacao = salaService.criarOcupacao(salaId, request);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}").buildAndExpand(ocupacao.id()).toUri();
         return ResponseEntity.created(location).body(ocupacao);
     }
 

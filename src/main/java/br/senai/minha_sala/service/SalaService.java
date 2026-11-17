@@ -1,7 +1,9 @@
 package br.senai.minha_sala.service;
 
+import br.senai.minha_sala.dto.BloqueioRequest;
 import br.senai.minha_sala.dto.BloqueioResponse;
 import br.senai.minha_sala.dto.ConsultaOcupacaoSalasResponse;
+import br.senai.minha_sala.dto.OcupacaoRequest;
 import br.senai.minha_sala.dto.OcupacaoResponse;
 import br.senai.minha_sala.dto.SalaRequest;
 import br.senai.minha_sala.dto.SalaResponse;
@@ -112,7 +114,25 @@ public class SalaService {
         return new ConsultaOcupacaoSalasResponse(inicio, fim, salas, bloqueios, ocupacoes);
     }
 
-    /** Registra uma aula em uma sala, confirmando a ocupação no horário cadastrado. */
+    /** Cadastra um bloqueio fixo para a sala. */
+    @Transactional
+    public BloqueioResponse criarBloqueio(Long salaId, BloqueioRequest dados) {
+        Sala sala = buscarEntidadePorId(salaId);
+        Bloqueio bloqueio = new Bloqueio(null, sala, dados.dataInicio(), dados.dataFim(), dados.motivo());
+        Bloqueio salvo = bloqueioRepository.save(bloqueio);
+        return new BloqueioResponse(salvo.getId(), sala.getId(), sala.getNome(), salvo.getDataInicio(), salvo.getDataFim(), salvo.getMotivo());
+    }
+
+    /** Cadastra uma ocupação direta na sala validando bloqueios e sobreposições. */
+    @Transactional
+    public OcupacaoResponse criarOcupacao(Long salaId, OcupacaoRequest dados) {
+        Sala sala = buscarEntidadePorId(salaId);
+        validarConflitos(salaId, dados.data(), dados.inicio(), dados.fim(), null);
+        Ocupacao ocupacao = new Ocupacao(null, sala, null, dados.data(), dados.inicio(), dados.fim(), dados.descricao());
+        return toOcupacaoResponse(ocupacaoRepository.save(ocupacao));
+    }
+
+    /** Registra uma aula em uma sala, confirmando a ocupação no horário cadastrado e impedindo sobreposições. */
     @Transactional
     public OcupacaoResponse registrarAulaEmSala(Long salaId, Long aulaId) {
         Sala sala = buscarEntidadePorId(salaId);
@@ -123,24 +143,10 @@ public class SalaService {
         LocalTime inicio = aula.getInicio();
         LocalTime fim = aula.getFim();
 
-        // Verifica se a sala está bloqueada nesta data
-        List<Bloqueio> bloqueios = bloqueioRepository.findBySalaIdAndData(salaId, data);
-        if (!bloqueios.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "A sala está bloqueada na data selecionada");
-        }
-
-        // Verifica se a aula já possui ocupação registrada (garante registro único)
         Optional<Ocupacao> ocupacaoExistente = ocupacaoRepository.findByAulaId(aulaId);
         Long ignorarId = ocupacaoExistente.map(Ocupacao::getId).orElse(null);
 
-        // Verifica conflito de horário com outras ocupações na mesma sala e dia
-        List<Ocupacao> ocupacoesNoDia = ocupacaoRepository.findBySalaIdAndData(salaId, data, ignorarId);
-        boolean conflito = ocupacoesNoDia.stream().anyMatch(o ->
-                inicio.isBefore(o.getFim()) && fim.isAfter(o.getInicio())
-        );
-        if (conflito) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "A sala já possui ocupação cadastrada para este horário");
-        }
+        validarConflitos(salaId, data, inicio, fim, ignorarId);
 
         Ocupacao ocupacao = ocupacaoExistente.orElseGet(Ocupacao::new);
         ocupacao.setSala(sala);
@@ -152,6 +158,22 @@ public class SalaService {
         ocupacao.setDescricao("Aula: " + nomeTurma + " (" + aula.getDocente() + ")");
 
         return toOcupacaoResponse(ocupacaoRepository.save(ocupacao));
+    }
+
+    /** Valida se a sala possui bloqueio fixo ou ocupação sobreposta no horário solicitado. */
+    private void validarConflitos(Long salaId, LocalDate data, LocalTime inicio, LocalTime fim, Long ignorarOcupacaoId) {
+        List<Bloqueio> bloqueios = bloqueioRepository.findBySalaIdAndData(salaId, data);
+        if (!bloqueios.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A sala possui bloqueio fixo ativo na data informada");
+        }
+
+        List<Ocupacao> ocupacoesNoDia = ocupacaoRepository.findBySalaIdAndData(salaId, data, ignorarOcupacaoId);
+        boolean sobreposta = ocupacoesNoDia.stream().anyMatch(o ->
+                inicio.isBefore(o.getFim()) && fim.isAfter(o.getInicio())
+        );
+        if (sobreposta) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ocupação sobreposta não permitida para o mesmo local e horário");
+        }
     }
 
     private OcupacaoResponse toOcupacaoResponse(Ocupacao o) {
