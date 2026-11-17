@@ -123,21 +123,41 @@ public class SalaService {
         return new BloqueioResponse(salvo.getId(), sala.getId(), sala.getNome(), salvo.getDataInicio(), salvo.getDataFim(), salvo.getMotivo());
     }
 
-    /** Cadastra uma ocupação direta na sala validando bloqueios e sobreposições. */
+    /** Cadastra uma ocupação direta na sala validando capacidade, bloqueios e sobreposições. */
     @Transactional
     public OcupacaoResponse criarOcupacao(Long salaId, OcupacaoRequest dados) {
         Sala sala = buscarEntidadePorId(salaId);
+
+        if (dados.quantidadeAlunos() != null && dados.quantidadeAlunos() > sala.getCapacidade()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "A capacidade da sala (" + sala.getCapacidade()
+                            + " lugares) é insuficiente para a quantidade de alunos informada ("
+                            + dados.quantidadeAlunos() + " alunos)"
+            );
+        }
+
         validarConflitos(salaId, dados.data(), dados.inicio(), dados.fim(), null);
         Ocupacao ocupacao = new Ocupacao(null, sala, null, dados.data(), dados.inicio(), dados.fim(), dados.descricao());
         return toOcupacaoResponse(ocupacaoRepository.save(ocupacao));
     }
 
-    /** Registra uma aula em uma sala, confirmando a ocupação no horário cadastrado e impedindo sobreposições. */
+    /** Registra uma aula em uma sala, impedindo salas pequenas demais e ocupações sobrepostas. */
     @Transactional
     public OcupacaoResponse registrarAulaEmSala(Long salaId, Long aulaId) {
         Sala sala = buscarEntidadePorId(salaId);
         Aula aula = aulaRepository.findById(aulaId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aula não encontrada"));
+
+        // Valida se a capacidade da sala é suficiente para a quantidade de alunos da turma (SCRUM-226)
+        if (aula.getTurma() != null && aula.getTurma().getQuantidadeAlunos() > sala.getCapacidade()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "A capacidade da sala (" + sala.getCapacidade()
+                            + " lugares) é insuficiente para a quantidade de alunos da turma ("
+                            + aula.getTurma().getQuantidadeAlunos() + " alunos)"
+            );
+        }
 
         LocalDate data = aula.getData();
         LocalTime inicio = aula.getInicio();
