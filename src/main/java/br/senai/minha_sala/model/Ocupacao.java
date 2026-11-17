@@ -31,6 +31,10 @@ public class Ocupacao {
     @JoinColumn(name = "sala_id", nullable = false)
     private Sala sala;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "aula_id")
+    private Aula aula;
+
     @Column(name = "data", nullable = false)
     private LocalDate data;
 

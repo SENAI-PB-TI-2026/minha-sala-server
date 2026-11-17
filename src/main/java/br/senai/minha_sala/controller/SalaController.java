@@ -1,6 +1,7 @@
 package br.senai.minha_sala.controller;
 
 import br.senai.minha_sala.dto.ConsultaOcupacaoSalasResponse;
+import br.senai.minha_sala.dto.OcupacaoResponse;
 import br.senai.minha_sala.dto.SalaRequest;
 import br.senai.minha_sala.dto.SalaResponse;
 import br.senai.minha_sala.service.SalaService;
@@ -30,6 +31,17 @@ public class SalaController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim) {
         return salaService.consultarOcupacaoPorPeriodo(inicio, fim);
+    }
+
+    /** Registra uma aula em uma sala e confirma a ocupação no horário cadastrado. */
+    @PostMapping("/{salaId}/aulas/{aulaId}")
+    public ResponseEntity<OcupacaoResponse> registrarAula(
+            @PathVariable Long salaId,
+            @PathVariable Long aulaId) {
+        OcupacaoResponse ocupacao = salaService.registrarAulaEmSala(salaId, aulaId);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .build().toUri();
+        return ResponseEntity.created(location).body(ocupacao);
     }
 
     /** Retorna todas as salas cadastradas. */
