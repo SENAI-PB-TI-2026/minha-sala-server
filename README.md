@@ -53,6 +53,22 @@ Com JDK 25 configurado no `JAVA_HOME`, execute `./mvnw.cmd spring-boot:run` no W
 
 Execute `./mvnw.cmd test` para verificar o CRUD e as validações com H2 em memória.
 
+## API de aulas
+
+| Método | Rota | Resultado |
+| --- | --- | --- |
+| GET | `/aulas` | Lista de aulas cadastradas (200) |
+| GET | `/aulas/{id}` | Consulta por ID (200) |
+| POST | `/aulas` | Cadastro (201 e cabeçalho Location) |
+
+Para cadastrar uma aula prevista, envie turma, docente, data, início e fim:
+
+```json
+{"turmaId": 1, "docente": "Ana Souza", "data": "2026-12-10", "inicio": "08:00", "fim": "09:30"}
+```
+
+A turma deve existir e o horário de fim deve ser posterior ao início. A aula é persistida sem sala associada.
+
 ## Desenvolvimento
 
 ### Configuração do banco
