@@ -27,6 +27,10 @@ public class AulaService {
         return aulaRepository.findAll().stream().map(this::toResponse).toList();
     }
 
+    public List<AulaResponse> listarPorTurma(Long turmaId) {
+        return aulaRepository.findByTurmaId(turmaId).stream().map(this::toResponse).toList();
+    }
+
     public AulaResponse buscarPorId(Long id) {
         return toResponse(aulaRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aula não encontrada")));
