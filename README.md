@@ -23,10 +23,15 @@ Em desenvolvimento.
 Corpo para criar ou atualizar:
 
 ```json
-{"nome": "Sala 01", "capacidade": 30}
+{
+  "nome": "Sala 01",
+  "capacidade": 30,
+  "tipo": "LABORATORIO",
+  "recursos": "1 projetor, 30 computadores"
+}
 ```
 
-O nome deve conter texto e a capacidade deve ser positiva. Dados inválidos retornam 400; IDs inexistentes retornam 404. O ID é gerado na criação e definido pela URL na atualização.
+O nome deve conter texto, a capacidade deve ser positiva, o tipo é obrigatório (`INDEFINIDO`, `SALA_DE_AULA` ou `LABORATORIO`) e os recursos são opcionais (máximo de 1000 caracteres). Dados inválidos retornam 400; IDs inexistentes retornam 404. O ID é gerado na criação e definido pela URL na atualização.
 
 ## API de turmas
 

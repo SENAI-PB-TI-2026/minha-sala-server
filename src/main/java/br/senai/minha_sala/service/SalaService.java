@@ -39,7 +39,7 @@ public class SalaService {
     /** Persiste uma nova sala, descartando qualquer ID fornecido pelo cliente. */
     @Transactional
     public SalaResponse criar(SalaRequest dados) {
-        Sala sala = new Sala(null, dados.nome(), dados.capacidade(), dados.tipo());
+        Sala sala = new Sala(null, dados.nome(), dados.capacidade(), dados.tipo(), dados.recursos());
         return toResponse(salaRepository.save(sala));
     }
 
@@ -50,6 +50,7 @@ public class SalaService {
         sala.setNome(dados.nome());
         sala.setCapacidade(dados.capacidade());
         sala.setTipo(dados.tipo());
+        sala.setRecursos(dados.recursos());
         return toResponse(salaRepository.save(sala));
     }
 
@@ -60,6 +61,6 @@ public class SalaService {
     }
 
     private SalaResponse toResponse(Sala sala) {
-        return new SalaResponse(sala.getId(), sala.getNome(), sala.getCapacidade(), sala.getTipo());
+        return new SalaResponse(sala.getId(), sala.getNome(), sala.getCapacidade(), sala.getTipo(), sala.getRecursos());
     }
 }
