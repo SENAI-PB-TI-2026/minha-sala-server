@@ -9,6 +9,8 @@ import br.senai.minha_sala.dto.SalaRequest;
 import br.senai.minha_sala.dto.SalaResponse;
 import br.senai.minha_sala.service.SalaService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +18,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @RestController
@@ -34,6 +37,17 @@ public class SalaController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim) {
         return salaService.consultarOcupacaoPorPeriodo(inicio, fim);
+    }
+
+    /** Lista as salas compatíveis e livres no intervalo solicitado. */
+    @GetMapping("/disponiveis")
+    public List<SalaResponse> consultarDisponiveis(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime inicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime fim,
+            @RequestParam @Positive int quantidadeAlunos,
+            @RequestParam(required = false) @Size(max = 1000) String recursoObrigatorio) {
+        return salaService.consultarDisponiveis(data, inicio, fim, quantidadeAlunos, recursoObrigatorio);
     }
 
     /** Registra uma aula em uma sala e confirma a ocupação no horário cadastrado. */
