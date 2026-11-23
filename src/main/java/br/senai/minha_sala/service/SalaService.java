@@ -22,6 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -159,6 +160,7 @@ public class SalaService {
             );
         }
 
+        validarRecursoObrigatorio(sala, aula.getRecursoObrigatorio());
         LocalDate data = aula.getData();
         LocalTime inicio = aula.getInicio();
         LocalTime fim = aula.getFim();
@@ -178,6 +180,23 @@ public class SalaService {
         ocupacao.setDescricao("Aula: " + nomeTurma + " (" + aula.getDocente() + ")");
 
         return toOcupacaoResponse(ocupacaoRepository.save(ocupacao));
+    }
+
+    private void validarRecursoObrigatorio(Sala sala, String recursoObrigatorio) {
+        if (recursoObrigatorio == null) {
+            return;
+        }
+
+        String recursos = sala.getRecursos();
+        boolean disponivel = recursos != null && Arrays.stream(recursos.split("[,;\\r\\n]+"))
+                .map(String::strip)
+                // O cadastro da sala admite itens com quantidade, como "1 projetor".
+                .map(item -> item.replaceFirst("^[1-9]\\d*\\s+", ""))
+                .anyMatch(recursoObrigatorio::equalsIgnoreCase);
+        if (!disponivel) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "A sala não possui o recurso obrigatório: " + recursoObrigatorio);
+        }
     }
 
     /** Valida se a sala possui bloqueio fixo ou ocupação sobreposta no horário solicitado. */

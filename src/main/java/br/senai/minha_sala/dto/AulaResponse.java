@@ -4,5 +4,5 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 public record AulaResponse(Long id, Long turmaId, String docente, LocalDate data,
-                           LocalTime inicio, LocalTime fim) {
+                           LocalTime inicio, LocalTime fim, String recursoObrigatorio) {
 }
