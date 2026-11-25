@@ -26,6 +26,7 @@ Este diretório contém as regras (`rules`), habilidades (`skills`), prompts e i
 - [`rules/03-flyway-database-rules.md`](rules/03-flyway-database-rules.md): Políticas de migração e versionamento de banco de dados.
 - [`rules/04-git-commit-and-pr-rules.md`](rules/04-git-commit-and-pr-rules.md): **Conventional Commits** e aprovação humana obrigatória para push/Pull Request.
 - [`rules/05-clarification-and-ambiguity-rules.md`](rules/05-clarification-and-ambiguity-rules.md): **Parar e perguntar** antes de agir em caso de dúvidas, ideias incompletas ou ambiguidades.
+- [`rules/06-strict-scope-rules.md`](rules/06-strict-scope-rules.md): **Fazer estritamente o que foi pedido** (escopo estrito, sem gold plating e com alterações mínimas).
 - [`skills/new-crud-feature.md`](skills/new-crud-feature.md): Guia de implementação de novos endpoints CRUD.
 - [`skills/db-migration.md`](skills/db-migration.md): Guia de evolução de esquemas relacionais.
 - [`skills/prompt-template-delegation.md`](skills/prompt-template-delegation.md): Template oficial de envio de tarefas da Engenheira de Prompt para a Desenvolvedora.
