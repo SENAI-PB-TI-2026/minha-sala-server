@@ -39,7 +39,7 @@ public class SalaService {
     /** Persiste uma nova sala, descartando qualquer ID fornecido pelo cliente. */
     @Transactional
     public SalaResponse criar(SalaRequest dados) {
-        Sala sala = new Sala(null, dados.nome(), dados.capacidade(), dados.tipo(), dados.recursos());
+        Sala sala = new Sala(null, dados.nome(), dados.capacidade(), dados.tipo(), dados.recursos(), true);
         return toResponse(salaRepository.save(sala));
     }
 
@@ -54,6 +54,14 @@ public class SalaService {
         return toResponse(salaRepository.save(sala));
     }
 
+    /** Inativa uma sala existente e retorna seus dados atualizados. */
+    @Transactional
+    public SalaResponse inativar(Long id) {
+        Sala sala = buscarEntidadePorId(id);
+        sala.setAtivo(false);
+        return toResponse(salaRepository.save(sala));
+    }
+
     /** Remove uma sala existente; lança uma resposta 404 para ID desconhecido. */
     @Transactional
     public void excluir(Long id) {
@@ -61,6 +69,6 @@ public class SalaService {
     }
 
     private SalaResponse toResponse(Sala sala) {
-        return new SalaResponse(sala.getId(), sala.getNome(), sala.getCapacidade(), sala.getTipo(), sala.getRecursos());
+        return new SalaResponse(sala.getId(), sala.getNome(), sala.getCapacidade(), sala.getTipo(), sala.getRecursos(), sala.isAtivo());
     }
 }

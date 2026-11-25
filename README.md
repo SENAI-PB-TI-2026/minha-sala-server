@@ -18,6 +18,7 @@ Em desenvolvimento.
 | GET | `/salas/{id}` | Consulta por ID (200) |
 | POST | `/salas` | Criação (201 e cabeçalho Location) |
 | PUT | `/salas/{id}` | Atualização (200) |
+| PATCH | `/salas/{id}/inativar` | Inativa a sala (200) |
 | DELETE | `/salas/{id}` | Exclusão (204) |
 
 Corpo para criar ou atualizar:
@@ -31,7 +32,7 @@ Corpo para criar ou atualizar:
 }
 ```
 
-O nome deve conter texto, a capacidade deve ser positiva, o tipo é obrigatório (`INDEFINIDO`, `SALA_DE_AULA` ou `LABORATORIO`) e os recursos são opcionais (máximo de 1000 caracteres). Dados inválidos retornam 400; IDs inexistentes retornam 404. O ID é gerado na criação e definido pela URL na atualização.
+O nome deve conter texto, a capacidade deve ser positiva, o tipo é obrigatório (`INDEFINIDO`, `SALA_DE_AULA` ou `LABORATORIO`) e os recursos são opcionais (máximo de 1000 caracteres). Dados inválidos retornam 400; IDs inexistentes retornam 404. O ID é gerado na criação e definido pela URL na atualização. Para inativar uma sala, envie `PATCH /salas/{id}/inativar`. A operação retorna a sala atualizada com `ativo: false`.
 
 ## API de turmas
 
