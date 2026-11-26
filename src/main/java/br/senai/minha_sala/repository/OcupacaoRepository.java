@@ -15,6 +15,8 @@ public interface OcupacaoRepository extends JpaRepository<Ocupacao, Long> {
 
     Optional<Ocupacao> findByAulaId(Long aulaId);
 
+    boolean existsBySalaIdAndDataBetween(Long salaId, LocalDate inicio, LocalDate fim);
+
     @Query("SELECT o FROM Ocupacao o WHERE o.sala.id = :salaId AND o.data = :data AND (:ignorarOcupacaoId IS NULL OR o.id <> :ignorarOcupacaoId)")
     List<Ocupacao> findBySalaIdAndData(@Param("salaId") Long salaId, @Param("data") LocalDate data, @Param("ignorarOcupacaoId") Long ignorarOcupacaoId);
 }
