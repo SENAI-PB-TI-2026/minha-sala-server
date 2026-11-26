@@ -117,7 +117,8 @@ public class SalaService {
     /** Cadastra um bloqueio fixo para a sala. */
     @Transactional
     public BloqueioResponse criarBloqueio(Long salaId, BloqueioRequest dados) {
-        Sala sala = buscarEntidadePorId(salaId);
+        Sala sala = salaRepository.findByIdForUpdate(salaId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
         Bloqueio bloqueio = new Bloqueio(null, sala, dados.dataInicio(), dados.dataFim(), dados.motivo());
         Bloqueio salvo = bloqueioRepository.save(bloqueio);
         return new BloqueioResponse(salvo.getId(), sala.getId(), sala.getNome(), salvo.getDataInicio(), salvo.getDataFim(), salvo.getMotivo());
