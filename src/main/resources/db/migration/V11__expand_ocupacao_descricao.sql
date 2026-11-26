@@ -1,0 +1,1 @@
+ALTER TABLE ocupacoes ALTER COLUMN descricao VARCHAR(519);

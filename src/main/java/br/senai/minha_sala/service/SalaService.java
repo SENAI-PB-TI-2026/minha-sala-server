@@ -137,7 +137,7 @@ public class SalaService {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "A capacidade da sala (" + sala.getCapacidade()
-                            + " lugares) e insuficiente para a quantidade de alunos informada ("
+                            + " lugares) é insuficiente para a quantidade de alunos informada ("
                             + dados.quantidadeAlunos() + " alunos)"
             );
         }
@@ -154,15 +154,6 @@ public class SalaService {
         Sala sala = salaRepository.findByIdForUpdate(salaId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
 
-        if (aula.getTurma() != null && aula.getTurma().getQuantidadeAlunos() > sala.getCapacidade()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "A capacidade da sala (" + sala.getCapacidade()
-                            + " lugares) e insuficiente para a quantidade de alunos da turma ("
-                            + aula.getTurma().getQuantidadeAlunos() + " alunos)"
-            );
-        }
-
         Optional<Ocupacao> ocupacaoExistente = ocupacaoRepository.findByAulaId(aulaId);
         if (ocupacaoExistente.isPresent()) {
             Ocupacao existente = ocupacaoExistente.get();
@@ -171,6 +162,15 @@ public class SalaService {
                         "A aula já está registrada em outra sala");
             }
             return toOcupacaoResponse(existente);
+        }
+
+        if (aula.getTurma() != null && aula.getTurma().getQuantidadeAlunos() > sala.getCapacidade()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "A capacidade da sala (" + sala.getCapacidade()
+                            + " lugares) é insuficiente para a quantidade de alunos da turma ("
+                            + aula.getTurma().getQuantidadeAlunos() + " alunos)"
+            );
         }
 
         LocalDate data = aula.getData();
