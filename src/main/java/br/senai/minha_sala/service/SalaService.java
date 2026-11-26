@@ -119,6 +119,10 @@ public class SalaService {
     public BloqueioResponse criarBloqueio(Long salaId, BloqueioRequest dados) {
         Sala sala = salaRepository.findByIdForUpdate(salaId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
+        if (ocupacaoRepository.existsBySalaIdAndDataBetween(salaId, dados.dataInicio(), dados.dataFim())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Não é possível bloquear a sala: existe uma ocupação no período informado");
+        }
         Bloqueio bloqueio = new Bloqueio(null, sala, dados.dataInicio(), dados.dataFim(), dados.motivo());
         Bloqueio salvo = bloqueioRepository.save(bloqueio);
         return new BloqueioResponse(salvo.getId(), sala.getId(), sala.getNome(), salvo.getDataInicio(), salvo.getDataFim(), salvo.getMotivo());
