@@ -1,14 +1,17 @@
 package br.senai.minha_sala.controller;
 
+import br.senai.minha_sala.dto.ConsultaOcupacaoSalasResponse;
 import br.senai.minha_sala.dto.SalaRequest;
 import br.senai.minha_sala.dto.SalaResponse;
 import br.senai.minha_sala.service.SalaService;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -19,6 +22,14 @@ public class SalaController {
     /** Inicializa o controller com o serviço responsável pelas salas. */
     public SalaController(SalaService salaService) {
         this.salaService = salaService;
+    }
+
+    /** Consulta salas ativas, bloqueios e ocupações por período. */
+    @GetMapping("/ocupacao")
+    public ConsultaOcupacaoSalasResponse consultarOcupacao(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim) {
+        return salaService.consultarOcupacaoPorPeriodo(inicio, fim);
     }
 
     /** Retorna todas as salas cadastradas. */

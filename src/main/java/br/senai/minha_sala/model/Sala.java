@@ -38,5 +38,4 @@ public class Sala {
     @Size(max = 1000, message = "Os recursos devem ter no máximo 1000 caracteres")
     @Column(columnDefinition = "TEXT")
     private String recursos;
-
 }
