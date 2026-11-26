@@ -7,6 +7,7 @@ public record OcupacaoResponse(
         Long id,
         Long salaId,
         String salaNome,
+        Long aulaId,
         LocalDate data,
         LocalTime inicio,
         LocalTime fim,
