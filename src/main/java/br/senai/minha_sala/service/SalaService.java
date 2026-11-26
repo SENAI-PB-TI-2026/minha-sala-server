@@ -81,7 +81,7 @@ public class SalaService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A data final deve ser posterior ou igual à data inicial");
         }
 
-        List<SalaResponse> salas = salaRepository.findByAtivoTrue().stream()
+        List<SalaResponse> salas = salaRepository.findSalasAtivas().stream()
                 .map(this::toResponse)
                 .toList();
 
