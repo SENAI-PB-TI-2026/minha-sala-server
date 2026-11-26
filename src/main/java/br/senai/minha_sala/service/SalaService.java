@@ -22,7 +22,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -173,6 +175,7 @@ public class SalaService {
             );
         }
 
+        validarRecursoObrigatorio(sala, aula.getRecursoObrigatorio());
         LocalDate data = aula.getData();
         LocalTime inicio = aula.getInicio();
         LocalTime fim = aula.getFim();
@@ -202,6 +205,33 @@ public class SalaService {
         ocupacao.setDescricao("Aula: " + nomeTurma + " (" + aula.getDocente() + ")");
 
         return toOcupacaoResponse(ocupacaoRepository.save(ocupacao));
+    }
+
+    private void validarRecursoObrigatorio(Sala sala, String recursoObrigatorio) {
+        if (recursoObrigatorio == null) {
+            return;
+        }
+
+        String recursoExigido = normalizarNomeRecurso(recursoObrigatorio);
+        String recursos = sala.getRecursos();
+        boolean disponivel = recursos != null && Arrays.stream(recursos.split("[,;\\r\\n]+"))
+                .map(SalaService::normalizarNomeRecurso)
+                .anyMatch(recursoExigido::equals);
+        if (!disponivel) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "A sala não possui o recurso obrigatório: " + recursoObrigatorio);
+        }
+    }
+
+    private static String normalizarNomeRecurso(String recurso) {
+        String nome = recurso.strip()
+                .replaceFirst("^[1-9]\\d*\\s+", "")
+                .toLowerCase(Locale.ROOT);
+        return switch (nome) {
+            case "computadores" -> "computador";
+            case "projetores" -> "projetor";
+            default -> nome;
+        };
     }
 
     /** Valida se a sala possui bloqueio fixo ou ocupação sobreposta no horário solicitado. */
