@@ -42,4 +42,7 @@ public class Aula {
 
     @Column(nullable = false)
     private LocalTime fim;
+
+    @Column(name = "recurso_obrigatorio", length = 1000)
+    private String recursoObrigatorio;
 }

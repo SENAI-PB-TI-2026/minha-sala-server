@@ -24,8 +24,20 @@ public record AulaRequest(
         LocalTime inicio,
 
         @NotNull(message = "O horário de fim deve ser informado")
-        LocalTime fim
+        LocalTime fim,
+
+        @Size(max = 1000, message = "O recurso obrigatório deve ter no máximo 1000 caracteres")
+        String recursoObrigatorio
 ) {
+    public AulaRequest {
+        if (recursoObrigatorio != null) {
+            recursoObrigatorio = recursoObrigatorio.strip();
+            if (recursoObrigatorio.isEmpty()) {
+                recursoObrigatorio = null;
+            }
+        }
+    }
+
     @AssertTrue(message = "O horário de fim deve ser posterior ao horário de início")
     public boolean isFimPosteriorAoInicio() {
         return inicio == null || fim == null || fim.isAfter(inicio);

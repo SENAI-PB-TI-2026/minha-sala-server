@@ -40,12 +40,13 @@ public class AulaService {
     public AulaResponse criar(AulaRequest dados) {
         Turma turma = turmaRepository.findById(dados.turmaId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Turma não encontrada"));
-        Aula aula = new Aula(null, turma, dados.docente(), dados.data(), dados.inicio(), dados.fim());
+        Aula aula = new Aula(null, turma, dados.docente(), dados.data(), dados.inicio(), dados.fim(),
+                dados.recursoObrigatorio());
         return toResponse(aulaRepository.save(aula));
     }
 
     private AulaResponse toResponse(Aula aula) {
         return new AulaResponse(aula.getId(), aula.getTurma().getId(), aula.getDocente(),
-                aula.getData(), aula.getInicio(), aula.getFim());
+                aula.getData(), aula.getInicio(), aula.getFim(), aula.getRecursoObrigatorio());
     }
 }
