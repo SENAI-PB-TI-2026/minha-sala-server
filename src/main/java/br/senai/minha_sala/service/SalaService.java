@@ -117,58 +117,82 @@ public class SalaService {
     /** Cadastra um bloqueio fixo para a sala. */
     @Transactional
     public BloqueioResponse criarBloqueio(Long salaId, BloqueioRequest dados) {
-        Sala sala = buscarEntidadePorId(salaId);
+        Sala sala = salaRepository.findByIdForUpdate(salaId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
+        if (ocupacaoRepository.existsBySalaIdAndDataBetween(salaId, dados.dataInicio(), dados.dataFim())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Não é possível bloquear a sala: existe uma ocupação no período informado");
+        }
         Bloqueio bloqueio = new Bloqueio(null, sala, dados.dataInicio(), dados.dataFim(), dados.motivo());
         Bloqueio salvo = bloqueioRepository.save(bloqueio);
         return new BloqueioResponse(salvo.getId(), sala.getId(), sala.getNome(), salvo.getDataInicio(), salvo.getDataFim(), salvo.getMotivo());
     }
 
-    /** Cadastra uma ocupação direta na sala validando capacidade, bloqueios e sobreposições. */
+    /** Cadastra uma ocupação direta na sala validando bloqueios e sobreposições. */
     @Transactional
     public OcupacaoResponse criarOcupacao(Long salaId, OcupacaoRequest dados) {
-        Sala sala = buscarEntidadePorId(salaId);
-
-        if (dados.quantidadeAlunos() != null && dados.quantidadeAlunos() > sala.getCapacidade()) {
+        Sala sala = salaRepository.findByIdForUpdate(salaId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
+        if (dados.quantidadeAlunos() > sala.getCapacidade()) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "A capacidade da sala (" + sala.getCapacidade()
-                            + " lugares) é insuficiente para a quantidade de alunos informada ("
+                            + " lugares) e insuficiente para a quantidade de alunos informada ("
                             + dados.quantidadeAlunos() + " alunos)"
             );
         }
-
         validarConflitos(salaId, dados.data(), dados.inicio(), dados.fim(), null);
         Ocupacao ocupacao = new Ocupacao(null, sala, null, dados.data(), dados.inicio(), dados.fim(), dados.descricao());
         return toOcupacaoResponse(ocupacaoRepository.save(ocupacao));
     }
 
-    /** Registra uma aula em uma sala, impedindo salas pequenas demais e ocupações sobrepostas. */
+    /** Registra uma aula em uma sala, confirmando a ocupação no horário cadastrado. */
     @Transactional
     public OcupacaoResponse registrarAulaEmSala(Long salaId, Long aulaId) {
-        Sala sala = buscarEntidadePorId(salaId);
-        Aula aula = aulaRepository.findById(aulaId)
+        Aula aula = aulaRepository.findByIdForUpdate(aulaId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aula não encontrada"));
+        Sala sala = salaRepository.findByIdForUpdate(salaId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
 
-        // Valida se a capacidade da sala é suficiente para a quantidade de alunos da turma (SCRUM-226)
         if (aula.getTurma() != null && aula.getTurma().getQuantidadeAlunos() > sala.getCapacidade()) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "A capacidade da sala (" + sala.getCapacidade()
-                            + " lugares) é insuficiente para a quantidade de alunos da turma ("
+                            + " lugares) e insuficiente para a quantidade de alunos da turma ("
                             + aula.getTurma().getQuantidadeAlunos() + " alunos)"
             );
+        }
+
+        Optional<Ocupacao> ocupacaoExistente = ocupacaoRepository.findByAulaId(aulaId);
+        if (ocupacaoExistente.isPresent()) {
+            Ocupacao existente = ocupacaoExistente.get();
+            if (!existente.getSala().getId().equals(salaId)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "A aula já está registrada em outra sala");
+            }
+            return toOcupacaoResponse(existente);
         }
 
         LocalDate data = aula.getData();
         LocalTime inicio = aula.getInicio();
         LocalTime fim = aula.getFim();
 
-        Optional<Ocupacao> ocupacaoExistente = ocupacaoRepository.findByAulaId(aulaId);
-        Long ignorarId = ocupacaoExistente.map(Ocupacao::getId).orElse(null);
+        // Verifica se a sala está bloqueada nesta data
+        List<Bloqueio> bloqueios = bloqueioRepository.findBySalaIdAndData(salaId, data);
+        if (!bloqueios.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A sala está bloqueada na data selecionada");
+        }
 
-        validarConflitos(salaId, data, inicio, fim, ignorarId);
+        // Verifica conflito de horário com outras ocupações na mesma sala e dia
+        List<Ocupacao> ocupacoesNoDia = ocupacaoRepository.findBySalaIdAndData(salaId, data, null);
+        boolean conflito = ocupacoesNoDia.stream().anyMatch(o ->
+                inicio.isBefore(o.getFim()) && fim.isAfter(o.getInicio())
+        );
+        if (conflito) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A sala já possui ocupação cadastrada para este horário");
+        }
 
-        Ocupacao ocupacao = ocupacaoExistente.orElseGet(Ocupacao::new);
+        Ocupacao ocupacao = new Ocupacao();
         ocupacao.setSala(sala);
         ocupacao.setAula(aula);
         ocupacao.setData(data);
