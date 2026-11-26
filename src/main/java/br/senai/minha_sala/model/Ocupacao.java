@@ -44,5 +44,6 @@ public class Ocupacao {
     @Column(nullable = false)
     private LocalTime fim;
 
+    @Column(length = 519)
     private String descricao;
 }

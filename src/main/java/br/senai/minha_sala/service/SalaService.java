@@ -126,29 +126,51 @@ public class SalaService {
     /** Cadastra uma ocupação direta na sala validando bloqueios e sobreposições. */
     @Transactional
     public OcupacaoResponse criarOcupacao(Long salaId, OcupacaoRequest dados) {
-        Sala sala = buscarEntidadePorId(salaId);
+        Sala sala = salaRepository.findByIdForUpdate(salaId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
         validarConflitos(salaId, dados.data(), dados.inicio(), dados.fim(), null);
         Ocupacao ocupacao = new Ocupacao(null, sala, null, dados.data(), dados.inicio(), dados.fim(), dados.descricao());
         return toOcupacaoResponse(ocupacaoRepository.save(ocupacao));
     }
 
-    /** Registra uma aula em uma sala, confirmando a ocupação no horário cadastrado e impedindo sobreposições. */
+    /** Registra uma aula em uma sala, confirmando a ocupação no horário cadastrado. */
     @Transactional
     public OcupacaoResponse registrarAulaEmSala(Long salaId, Long aulaId) {
-        Sala sala = buscarEntidadePorId(salaId);
-        Aula aula = aulaRepository.findById(aulaId)
+        Aula aula = aulaRepository.findByIdForUpdate(aulaId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aula não encontrada"));
+        Sala sala = salaRepository.findByIdForUpdate(salaId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
+
+        Optional<Ocupacao> ocupacaoExistente = ocupacaoRepository.findByAulaId(aulaId);
+        if (ocupacaoExistente.isPresent()) {
+            Ocupacao existente = ocupacaoExistente.get();
+            if (!existente.getSala().getId().equals(salaId)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "A aula já está registrada em outra sala");
+            }
+            return toOcupacaoResponse(existente);
+        }
 
         LocalDate data = aula.getData();
         LocalTime inicio = aula.getInicio();
         LocalTime fim = aula.getFim();
 
-        Optional<Ocupacao> ocupacaoExistente = ocupacaoRepository.findByAulaId(aulaId);
-        Long ignorarId = ocupacaoExistente.map(Ocupacao::getId).orElse(null);
+        // Verifica se a sala está bloqueada nesta data
+        List<Bloqueio> bloqueios = bloqueioRepository.findBySalaIdAndData(salaId, data);
+        if (!bloqueios.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A sala está bloqueada na data selecionada");
+        }
 
-        validarConflitos(salaId, data, inicio, fim, ignorarId);
+        // Verifica conflito de horário com outras ocupações na mesma sala e dia
+        List<Ocupacao> ocupacoesNoDia = ocupacaoRepository.findBySalaIdAndData(salaId, data, null);
+        boolean conflito = ocupacoesNoDia.stream().anyMatch(o ->
+                inicio.isBefore(o.getFim()) && fim.isAfter(o.getInicio())
+        );
+        if (conflito) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A sala já possui ocupação cadastrada para este horário");
+        }
 
-        Ocupacao ocupacao = ocupacaoExistente.orElseGet(Ocupacao::new);
+        Ocupacao ocupacao = new Ocupacao();
         ocupacao.setSala(sala);
         ocupacao.setAula(aula);
         ocupacao.setData(data);
