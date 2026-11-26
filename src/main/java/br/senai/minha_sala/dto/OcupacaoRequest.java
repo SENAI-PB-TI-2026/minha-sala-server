@@ -3,6 +3,7 @@ package br.senai.minha_sala.dto;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -19,7 +20,11 @@ public record OcupacaoRequest(
 
         @NotBlank(message = "A descrição deve ser informada")
         @Size(max = 519, message = "A descrição deve ter no máximo 519 caracteres")
-        String descricao
+        String descricao,
+
+        @NotNull(message = "A quantidade de alunos deve ser informada")
+        @Positive(message = "A quantidade de alunos deve ser maior que zero")
+        Integer quantidadeAlunos
 ) {
     @AssertTrue(message = "O horário de fim deve ser posterior ao horário de início")
     public boolean isHorarioValido() {

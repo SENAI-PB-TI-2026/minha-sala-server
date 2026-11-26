@@ -133,6 +133,14 @@ public class SalaService {
     public OcupacaoResponse criarOcupacao(Long salaId, OcupacaoRequest dados) {
         Sala sala = salaRepository.findByIdForUpdate(salaId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
+        if (dados.quantidadeAlunos() > sala.getCapacidade()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "A capacidade da sala (" + sala.getCapacidade()
+                            + " lugares) é insuficiente para a quantidade de alunos informada ("
+                            + dados.quantidadeAlunos() + " alunos)"
+            );
+        }
         validarConflitos(salaId, dados.data(), dados.inicio(), dados.fim(), null);
         Ocupacao ocupacao = new Ocupacao(null, sala, null, dados.data(), dados.inicio(), dados.fim(), dados.descricao());
         return toOcupacaoResponse(ocupacaoRepository.save(ocupacao));
@@ -154,6 +162,15 @@ public class SalaService {
                         "A aula já está registrada em outra sala");
             }
             return toOcupacaoResponse(existente);
+        }
+
+        if (aula.getTurma() != null && aula.getTurma().getQuantidadeAlunos() > sala.getCapacidade()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "A capacidade da sala (" + sala.getCapacidade()
+                            + " lugares) é insuficiente para a quantidade de alunos da turma ("
+                            + aula.getTurma().getQuantidadeAlunos() + " alunos)"
+            );
         }
 
         LocalDate data = aula.getData();
