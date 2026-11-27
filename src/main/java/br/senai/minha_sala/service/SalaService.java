@@ -23,8 +23,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -51,6 +53,22 @@ public class SalaService {
         return salaRepository.findAll().stream().map(this::toResponse).toList();
     }
 
+    /** Consulta as salas livres que comportam a turma e possuem o recurso solicitado. */
+    public List<SalaResponse> consultarDisponiveis(LocalDate data, LocalTime inicio, LocalTime fim,
+                                                  int quantidadeAlunos, String recursoObrigatorio) {
+        if (!fim.isAfter(inicio)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O horário de fim deve ser posterior ao início");
+        }
+
+        Map<Long, String> conflitos = buscarConflitos(data, inicio, fim, null, null);
+        return salaRepository.findByAtivoTrue().stream()
+                .filter(sala -> !conflitos.containsKey(sala.getId()))
+                .filter(sala -> comportaTurma(sala, quantidadeAlunos))
+                .filter(sala -> possuiRecurso(sala, recursoObrigatorio))
+                .map(this::toResponse)
+                .toList();
+    }
+
     /** Busca a sala pelo ID e lança uma resposta 404 se ela não existe. */
     public SalaResponse buscarPorId(Long id) {
         return toResponse(buscarEntidadePorId(id));
@@ -64,7 +82,7 @@ public class SalaService {
     /** Persiste uma nova sala, descartando qualquer ID fornecido pelo cliente. */
     @Transactional
     public SalaResponse criar(SalaRequest dados) {
-        Sala sala = new Sala(null, dados.nome(), dados.capacidade(), dados.tipo(), dados.recursos());
+        Sala sala = new Sala(null, dados.nome(), dados.capacidade(), dados.tipo(), dados.recursos(), true);
         return toResponse(salaRepository.save(sala));
     }
 
@@ -76,6 +94,14 @@ public class SalaService {
         sala.setCapacidade(dados.capacidade());
         sala.setTipo(dados.tipo());
         sala.setRecursos(dados.recursos());
+        return toResponse(salaRepository.save(sala));
+    }
+
+    /** Inativa uma sala existente e retorna seus dados atualizados. */
+    @Transactional
+    public SalaResponse inativar(Long id) {
+        Sala sala = buscarEntidadePorId(id);
+        sala.setAtivo(false);
         return toResponse(salaRepository.save(sala));
     }
 
@@ -94,7 +120,7 @@ public class SalaService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A data final deve ser posterior ou igual à data inicial");
         }
 
-        List<SalaResponse> salas = salaRepository.findAll().stream()
+        List<SalaResponse> salas = salaRepository.findByAtivoTrue().stream()
                 .map(this::toResponse)
                 .toList();
 
@@ -130,12 +156,14 @@ public class SalaService {
         return new BloqueioResponse(salvo.getId(), sala.getId(), sala.getNome(), salvo.getDataInicio(), salvo.getDataFim(), salvo.getMotivo());
     }
 
-    /** Cadastra uma ocupação direta na sala validando bloqueios e sobreposições. */
+    /** Cadastra uma ocupação direta na sala validando se está ativa, capacidade, bloqueios e sobreposições. */
     @Transactional
     public OcupacaoResponse criarOcupacao(Long salaId, OcupacaoRequest dados) {
         Sala sala = salaRepository.findByIdForUpdate(salaId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
-        if (dados.quantidadeAlunos() > sala.getCapacidade()) {
+        validarSalaAtiva(sala);
+
+        if (!comportaTurma(sala, dados.quantidadeAlunos())) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "A capacidade da sala (" + sala.getCapacidade()
@@ -148,13 +176,14 @@ public class SalaService {
         return toOcupacaoResponse(ocupacaoRepository.save(ocupacao));
     }
 
-    /** Registra uma aula em uma sala, confirmando a ocupação no horário cadastrado. */
+    /** Registra uma aula em uma sala, impedindo salas inativas, pequenas demais e ocupações sobrepostas. */
     @Transactional
     public OcupacaoResponse registrarAulaEmSala(Long salaId, Long aulaId) {
         Aula aula = aulaRepository.findByIdForUpdate(aulaId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aula não encontrada"));
         Sala sala = salaRepository.findByIdForUpdate(salaId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
+        validarSalaAtiva(sala);
 
         Optional<Ocupacao> ocupacaoExistente = ocupacaoRepository.findByAulaId(aulaId);
         if (ocupacaoExistente.isPresent()) {
@@ -163,10 +192,10 @@ public class SalaService {
                 throw new ResponseStatusException(HttpStatus.CONFLICT,
                         "A aula já está registrada em outra sala");
             }
-            return toOcupacaoResponse(existente);
         }
 
-        if (aula.getTurma() != null && aula.getTurma().getQuantidadeAlunos() > sala.getCapacidade()) {
+        // Valida se a capacidade da sala é suficiente para a quantidade de alunos da turma (SCRUM-226)
+        if (aula.getTurma() != null && !comportaTurma(sala, aula.getTurma().getQuantidadeAlunos())) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "A capacidade da sala (" + sala.getCapacidade()
@@ -175,27 +204,19 @@ public class SalaService {
             );
         }
 
-        validarRecursoObrigatorio(sala, aula.getRecursoObrigatorio());
+        if (!possuiRecurso(sala, aula.getRecursoObrigatorio())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "A sala não possui o recurso obrigatório: " + aula.getRecursoObrigatorio());
+        }
         LocalDate data = aula.getData();
         LocalTime inicio = aula.getInicio();
         LocalTime fim = aula.getFim();
 
         // Verifica se a sala está bloqueada nesta data
-        List<Bloqueio> bloqueios = bloqueioRepository.findBySalaIdAndData(salaId, data);
-        if (!bloqueios.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "A sala está bloqueada na data selecionada");
-        }
+        Long ignorarId = ocupacaoExistente.map(Ocupacao::getId).orElse(null);
+        validarConflitos(salaId, data, inicio, fim, ignorarId);
 
-        // Verifica conflito de horário com outras ocupações na mesma sala e dia
-        List<Ocupacao> ocupacoesNoDia = ocupacaoRepository.findBySalaIdAndData(salaId, data, null);
-        boolean conflito = ocupacoesNoDia.stream().anyMatch(o ->
-                inicio.isBefore(o.getFim()) && fim.isAfter(o.getInicio())
-        );
-        if (conflito) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "A sala já possui ocupação cadastrada para este horário");
-        }
-
-        Ocupacao ocupacao = new Ocupacao();
+        Ocupacao ocupacao = ocupacaoExistente.orElseGet(Ocupacao::new);
         ocupacao.setSala(sala);
         ocupacao.setAula(aula);
         ocupacao.setData(data);
@@ -207,20 +228,27 @@ public class SalaService {
         return toOcupacaoResponse(ocupacaoRepository.save(ocupacao));
     }
 
-    private void validarRecursoObrigatorio(Sala sala, String recursoObrigatorio) {
-        if (recursoObrigatorio == null) {
-            return;
+    private void validarSalaAtiva(Sala sala) {
+        if (!sala.isAtivo()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Não é possível registrar ocupação para uma sala inativa");
+        }
+    }
+
+    private boolean comportaTurma(Sala sala, int quantidadeAlunos) {
+        return quantidadeAlunos <= sala.getCapacidade();
+    }
+
+    private boolean possuiRecurso(Sala sala, String recursoObrigatorio) {
+        if (recursoObrigatorio == null || recursoObrigatorio.isBlank()) {
+            return true;
         }
 
         String recursoExigido = normalizarNomeRecurso(recursoObrigatorio);
         String recursos = sala.getRecursos();
-        boolean disponivel = recursos != null && Arrays.stream(recursos.split("[,;\\r\\n]+"))
+        return recursos != null && Arrays.stream(recursos.split("[,;\\r\\n]+"))
                 .map(SalaService::normalizarNomeRecurso)
                 .anyMatch(recursoExigido::equals);
-        if (!disponivel) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "A sala não possui o recurso obrigatório: " + recursoObrigatorio);
-        }
     }
 
     private static String normalizarNomeRecurso(String recurso) {
@@ -236,18 +264,22 @@ public class SalaService {
 
     /** Valida se a sala possui bloqueio fixo ou ocupação sobreposta no horário solicitado. */
     private void validarConflitos(Long salaId, LocalDate data, LocalTime inicio, LocalTime fim, Long ignorarOcupacaoId) {
-        List<Bloqueio> bloqueios = bloqueioRepository.findBySalaIdAndData(salaId, data);
-        if (!bloqueios.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "A sala possui bloqueio fixo ativo na data informada");
+        String motivo = buscarConflitos(data, inicio, fim, salaId, ignorarOcupacaoId).get(salaId);
+        if (motivo != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, motivo);
         }
+    }
 
-        List<Ocupacao> ocupacoesNoDia = ocupacaoRepository.findBySalaIdAndData(salaId, data, ignorarOcupacaoId);
-        boolean sobreposta = ocupacoesNoDia.stream().anyMatch(o ->
-                inicio.isBefore(o.getFim()) && fim.isAfter(o.getInicio())
-        );
-        if (sobreposta) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ocupação sobreposta não permitida para o mesmo local e horário");
+    private Map<Long, String> buscarConflitos(LocalDate data, LocalTime inicio, LocalTime fim,
+                                              Long salaId, Long ignorarOcupacaoId) {
+        Map<Long, String> conflitos = new HashMap<>();
+        for (Long id : bloqueioRepository.buscarIdsSalasBloqueadas(data, salaId)) {
+            conflitos.put(id, "A sala possui bloqueio fixo ativo na data informada");
         }
+        for (Long id : ocupacaoRepository.buscarIdsSalasOcupadas(data, inicio, fim, salaId, ignorarOcupacaoId)) {
+            conflitos.putIfAbsent(id, "Ocupação sobreposta não permitida para o mesmo local e horário");
+        }
+        return conflitos;
     }
 
     private OcupacaoResponse toOcupacaoResponse(Ocupacao o) {
@@ -265,6 +297,6 @@ public class SalaService {
     }
 
     private SalaResponse toResponse(Sala sala) {
-        return new SalaResponse(sala.getId(), sala.getNome(), sala.getCapacidade(), sala.getTipo(), sala.getRecursos());
+        return new SalaResponse(sala.getId(), sala.getNome(), sala.getCapacidade(), sala.getTipo(), sala.getRecursos(), sala.isAtivo());
     }
 }
