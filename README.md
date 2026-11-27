@@ -18,6 +18,7 @@ Em desenvolvimento.
 | GET | `/salas/{id}` | Consulta por ID (200) |
 | POST | `/salas` | Criação (201 e cabeçalho Location) |
 | PUT | `/salas/{id}` | Atualização (200) |
+| PATCH | `/salas/{id}/inativar` | Inativa a sala (200) |
 | DELETE | `/salas/{id}` | Exclusão (204) |
 
 Corpo para criar ou atualizar:
@@ -31,7 +32,9 @@ Corpo para criar ou atualizar:
 }
 ```
 
-O nome deve conter texto, a capacidade deve ser positiva, o tipo é obrigatório (`INDEFINIDO`, `SALA_DE_AULA` ou `LABORATORIO`) e os recursos são opcionais (máximo de 1000 caracteres). Dados inválidos retornam 400; IDs inexistentes retornam 404. O ID é gerado na criação e definido pela URL na atualização.
+O nome deve conter texto, a capacidade deve ser positiva, o tipo é obrigatório (`INDEFINIDO`, `SALA_DE_AULA` ou `LABORATORIO`) e os recursos são opcionais (máximo de 1000 caracteres). Dados inválidos retornam 400; IDs inexistentes retornam 404. O ID é gerado na criação e definido pela URL na atualização. Para inativar uma sala, envie `PATCH /salas/{id}/inativar`. A operação retorna a sala atualizada com `ativo: false`.
+
+Separe os itens de `recursos` por vírgula, ponto e vírgula ou quebra de linha. Cada item pode começar com uma quantidade inteira positiva seguida de espaço, como `30 computadores`. Para verificar a compatibilidade, a API ignora o prefixo de quantidade, os espaços nas pontas e diferenças de maiúsculas e minúsculas nos dois campos. Os nomes `computador` e `computadores` são equivalentes, assim como `projetor` e `projetores`. Os demais nomes devem coincidir por inteiro após a normalização.
 
 ## API de turmas
 
@@ -73,6 +76,8 @@ Para cadastrar uma aula prevista, envie turma, docente, data, início e fim:
 ```
 
 A turma deve existir e o horário de fim deve ser posterior ao início. A aula é persistida sem sala associada.
+
+Use o campo opcional `recursoObrigatorio` para informar um único recurso, por exemplo `"recursoObrigatorio": "Computador"`. Ao registrar uma nova ocupação para a aula, a API retorna HTTP 400 se a sala não oferece esse recurso. A quantidade informada no cadastro da sala não é comparada ao número de alunos nessa validação.
 
 ## Desenvolvimento
 

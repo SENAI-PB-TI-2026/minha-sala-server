@@ -110,6 +110,12 @@ public class SalaController {
         return salaService.atualizar(id, sala);
     }
 
+    /** Inativa a sala informada pelo ID na URL. */
+    @PatchMapping("/{id}/inativar")
+    public SalaResponse inativar(@PathVariable Long id) {
+        return salaService.inativar(id);
+    }
+
     /** Exclui a sala informada e retorna 204, ou 404 se ela não existe. */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@PathVariable Long id) {
