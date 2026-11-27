@@ -10,6 +10,8 @@ O gerenciamento de esquema relacional no `minha-sala-server` é estritamente con
   `src/main/resources/db/migration/`
 - Padrão de versionamento: `V{MAJOR}.{MINOR}__{descricao_em_snake_case}.sql`.
   Exemplo: `V1.0__create_reservas.sql`, `V1.1__add_bloco_to_salas.sql`.
+  A sequência começa em V1.0; MAJOR é positivo e MINOR não negativo, sem zeros
+  à esquerda. Migrations repetíveis usam `R__descricao_em_snake_case.sql`.
 - `MAJOR` identifica uma geração incompatível do esquema; `MINOR` identifica
   uma migration individual e cresce em sequência dentro da versão MAJOR.
   Cada novo script recebe o próximo MINOR disponível, sem lacunas ou reuso.
