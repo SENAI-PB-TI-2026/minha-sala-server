@@ -57,8 +57,6 @@ O nome e o curso devem conter texto e a quantidade de alunos deve ser positiva. 
 
 Para atualizar somente a quantidade de alunos, envie `PATCH /turmas/{id}/quantidade-alunos` com `{"quantidadeAlunos": 35}`. A operação retorna a turma atualizada; uma consulta `GET /turmas/{id}` apresenta a nova quantidade.
 
-Com JDK 25 configurado no `JAVA_HOME`, execute `./mvnw.cmd spring-boot:run` no Windows. As APIs ficam em `http://localhost:8080/salas` e `http://localhost:8080/turmas` e usam H2 persistido em `./data/minha-sala`.
-
 Execute `./mvnw.cmd test` para verificar o CRUD e as validações com H2 em memória.
 
 ## API de aulas
@@ -81,17 +79,47 @@ Use o campo opcional `recursoObrigatorio` para informar um único recurso, por e
 
 ## Desenvolvimento
 
-### Configuração do banco
+Use o JDK 25 com `JAVA_HOME` configurado. Para o PostgreSQL, também é necessário ter o Docker em execução com o Docker Compose disponível (`docker compose version`). Execute os comandos a partir da raiz do repositório.
 
-Copie `.env.example` para `.env` na raiz do projeto e ajuste `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`. No PowerShell:
+### PostgreSQL com Docker Compose
+
+Copie `.env.example` para `.env` caso ainda não exista. Se já usa um `.env` para H2, acrescente apenas as variáveis `POSTGRES_*` do exemplo.
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-O Spring carrega o `.env` ao iniciar pela raiz do projeto. Use o formato `CHAVE=valor`, sem `export` e sem aspas ao redor dos valores. As variáveis de ambiente do sistema têm prioridade. O arquivo `.env` fica fora do Git; o `.env.example` contém os valores de exemplo para H2.
+Preencha `POSTGRES_PASSWORD` com uma senha local, por exemplo uma sequência aleatória de letras e números, e ajuste `POSTGRES_DB` e `POSTGRES_USER` se necessário. Se a porta 5432 já estiver em uso, defina outra em `POSTGRES_PORT`. O banco fica acessível apenas em `127.0.0.1`. O Compose e o Spring leem o mesmo `.env` local, que fica fora do Git. Salve o arquivo em UTF-8, no formato `CHAVE=valor`, sem `export` e sem aspas. As variáveis de ambiente do sistema têm prioridade.
 
-As instruções de instalação, configuração e execução serão adicionadas conforme a estrutura do projeto for implementada.
+Suba o PostgreSQL e aguarde o healthcheck antes de iniciar a aplicação com o perfil `dev-postgres`.
+
+```powershell
+docker compose up -d --wait
+docker compose ps
+./mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev-postgres"
+```
+
+No Linux e no macOS, use `./mvnw` no lugar de `./mvnw.cmd`. Na IDE, selecione o perfil Spring `dev-postgres` e use a raiz do projeto como diretório de trabalho. A API fica disponível em `http://localhost:8080`.
+
+| Comando | Efeito |
+| --- | --- |
+| `docker compose stop` | Para o serviço e preserva o contêiner e os dados. |
+| `docker compose down` | Remove o contêiner e a rede do projeto e preserva o volume `postgres-data`. |
+| `docker compose down -v` | **Apaga o volume e todos os dados do PostgreSQL local.** Use apenas para descartar o banco, após fazer backup se precisar dos dados. |
+
+`POSTGRES_DB`, `POSTGRES_USER` e `POSTGRES_PASSWORD` configuram a inicialização de um volume vazio. Alterar o `.env` depois disso exige ajustar o banco ou as credenciais no PostgreSQL existente para que correspondam aos novos valores.
+
+### Flyway
+
+Ao iniciar a aplicação com `dev-postgres`, o Flyway aplica os scripts de `src/main/resources/db/migration` no PostgreSQL. O Hibernate valida o esquema com `ddl-auto=validate`. O volume mantém também a tabela `flyway_schema_history`.
+
+O Flyway combina as migrations comuns em `db/migration` com as do banco em `db/vendor/h2` ou `db/vendor/postgresql`. A `V1.8` da SCRUM-301 mantém o SQL original e o checksum no H2. A variante PostgreSQL usa `ALTER COLUMN descricao SET DATA TYPE VARCHAR(519)`.
+
+Antes de reutilizar um banco iniciado em uma branch anterior à SCRUM-301, confira as versões em `flyway_schema_history`. Se houver divergência após a renumeração, preserve os dados e alinhe o tratamento do histórico com a equipe. Use um banco separado para validar a instalação do zero.
+
+### H2 como banco padrão
+
+Execute `./mvnw.cmd spring-boot:run` sem ativar `dev-postgres`. O Spring usa o H2 persistido em `./data/minha-sala`, configurável pelas variáveis `DB_URL`, `DB_USERNAME` e `DB_PASSWORD` do exemplo.
 
 ## Licença
 

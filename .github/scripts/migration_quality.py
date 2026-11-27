@@ -5,7 +5,10 @@ from pathlib import Path
 import re
 import subprocess
 
-ROOT = "src/main/resources/db/migration"
+ROOT = "src/main/resources/db"
+COMMON = f"{ROOT}/migration"
+VENDORS = ("h2", "postgresql")
+LOCATIONS = (COMMON, *(f"{ROOT}/vendor/{vendor}" for vendor in VENDORS))
 # A convencao local e mais restrita que a sintaxe aceita pelo Flyway.
 VERSIONED = re.compile(r"V([1-9][0-9]*)\.(0|[1-9][0-9]*)__[a-z0-9]+(?:_[a-z0-9]+)*\.sql")
 REPEATABLE = re.compile(r"R__[a-z0-9]+(?:_[a-z0-9]+)*\.sql")
@@ -16,8 +19,8 @@ FLYWAY_REPEATABLE = re.compile(r"R__.+\.sql")
 def git(*args):
     return subprocess.check_output(["git", *args]).decode("utf-8", errors="surrogateescape")
 
-def sql_files():
-    return sorted(p for p in git("ls-files", "-z", "--", ROOT).split("\0")
+def sql_files(*locations):
+    return sorted(p for p in git("ls-files", "-z", "--", *locations).split("\0")
                   if p.lower().endswith(".sql"))
 
 def escape(value, property_value=False):
@@ -36,7 +39,7 @@ def version_key(raw):
         parts.pop()
     return tuple(parts)
 
-def inspect_history(base, files):
+def inspect_sequence(files):
     findings = []
     versions = collections.defaultdict(list)
     sequence = {}
@@ -67,18 +70,31 @@ def inspect_history(base, files):
             allowed = " ou ".join(f"V{ma}.{mi}" for ma, mi in expected)
             findings.append((path, f"Sequencia de migrations invalida: esperado {allowed}, encontrado V{major}.{minor}."))
         previous = (major, minor)
+    return findings
+
+def inspect_history(base):
+    findings = []
     if base:
         if not re.fullmatch(r"[0-9a-f]{40}", base):
             raise ValueError("SHA base invalido")
-        # A ausencia de deteccao de renames representa rename como delete + add.
-        diff = git("diff", "--no-renames", "--name-status", "-z", base, "HEAD", "--", ROOT)
-        fields = diff.rstrip("\0").split("\0") if diff else []
-        base_files = git("ls-tree", "-r", "-z", "--name-only", base, "--", ROOT).split("\0")
+        diff = git("diff", "--find-renames=100%", "--name-status", "-z", base, "HEAD", "--", *LOCATIONS)
+        fields = iter(diff.rstrip("\0").split("\0") if diff else [])
+        base_files = git("ls-tree", "-r", "-z", "--name-only", base, "--", *LOCATIONS).split("\0")
         base_versions = [version_key(match.group(1)) for path in base_files
                          if (match := FLYWAY_VERSIONED.fullmatch(Path(path).name))]
         highest_base = max(base_versions, default=None)
-        for index in range(0, len(fields), 2):
-            status, path = fields[index:index + 2]
+        for status in fields:
+            path = next(fields)
+            if status.startswith("R"):
+                destination = next(fields)
+                if not path.lower().endswith(".sql") or FLYWAY_REPEATABLE.fullmatch(Path(path).name):
+                    continue
+                same_script = Path(path).name == Path(destination).name
+                h2_relocation = Path(path).parent.as_posix() == COMMON and Path(destination).parent.as_posix() == f"{ROOT}/vendor/h2"
+                if same_script and h2_relocation:
+                    continue
+                findings.append((path, "Migration existente renomeada em relacao a base do PR. Revise o historico antes de aplicar."))
+                continue
             if (status.startswith(("M", "D", "T")) and path.lower().endswith(".sql")
                     and not FLYWAY_REPEATABLE.fullmatch(Path(path).name)):
                 findings.append((path, "Migration existente modificada, removida ou renomeada em relacao a base do PR. Revise o historico antes de aplicar."))
@@ -88,10 +104,13 @@ def inspect_history(base, files):
     return findings
 
 if __name__ == "__main__":
-    files = sql_files()
+    files = sql_files(*LOCATIONS)
     strict = os.getenv("MIGRATION_STRICT", "false").lower() == "true"
     base = os.getenv("BASE_SHA", "")
-    findings = inspect_history(base, files)
+    findings = inspect_history(base)
+    for vendor in VENDORS:
+        findings.extend(inspect_sequence(sql_files(COMMON, f"{ROOT}/vendor/{vendor}")))
+    findings = list(dict.fromkeys(findings))
     print(f"Arquivos SQL analisados: {len(files)}. Apontamentos: {len(findings)}.")
     if not files:
         print("::warning::Nenhuma migration SQL versionada no diretorio esperado.")
