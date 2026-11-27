@@ -71,7 +71,8 @@ public class SalaService {
     /** Atualiza nome e capacidade de uma sala existente, preservando seu ID. */
     @Transactional
     public SalaResponse atualizar(Long id, SalaRequest dados) {
-        Sala sala = buscarEntidadePorId(id);
+        Sala sala = salaRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
         sala.setNome(dados.nome());
         sala.setCapacidade(dados.capacidade());
         sala.setTipo(dados.tipo());
@@ -82,7 +83,8 @@ public class SalaService {
     /** Inativa uma sala existente e retorna seus dados atualizados. */
     @Transactional
     public SalaResponse inativar(Long id) {
-        Sala sala = buscarEntidadePorId(id);
+        Sala sala = salaRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
         sala.setAtivo(false);
         return toResponse(salaRepository.save(sala));
     }
@@ -93,7 +95,7 @@ public class SalaService {
         salaRepository.delete(buscarEntidadePorId(id));
     }
 
-    /** Consulta salas ativas, bloqueios e ocupações registradas dentro do período especificado. */
+    /** Consulta salas (inclusive inativas), bloqueios e ocupações registradas dentro do período especificado. */
     public ConsultaOcupacaoSalasResponse consultarOcupacaoPorPeriodo(LocalDate inicio, LocalDate fim) {
         if (inicio == null || fim == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "As datas de início e fim do período devem ser informadas");
@@ -102,7 +104,7 @@ public class SalaService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A data final deve ser posterior ou igual à data inicial");
         }
 
-        List<SalaResponse> salas = salaRepository.findByAtivoTrue().stream()
+        List<SalaResponse> salas = salaRepository.findAll().stream()
                 .map(this::toResponse)
                 .toList();
 
