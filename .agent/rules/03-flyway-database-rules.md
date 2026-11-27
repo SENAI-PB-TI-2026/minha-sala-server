@@ -8,16 +8,28 @@ O gerenciamento de esquema relacional no `minha-sala-server` é estritamente con
 
 - Todos os scripts SQL devem estar em:
   `src/main/resources/db/migration/`
-- Padrão de versionamento:
-  `V{número}__{descricao_em_snake_case}.sql`
-  Exemplo: `V3__create_reservas.sql`, `V4__add_bloco_to_salas.sql`.
+- Padrão de versionamento: `V{MAJOR}.{MINOR}__{descricao_em_snake_case}.sql`.
+  Exemplo: `V1.0__create_reservas.sql`, `V1.1__add_bloco_to_salas.sql`.
+  A sequência começa em V1.0; MAJOR é positivo e MINOR não negativo, sem zeros
+  à esquerda. Migrations repetíveis usam `R__descricao_em_snake_case.sql`.
+- `MAJOR` identifica uma geração incompatível do esquema; `MINOR` identifica
+  uma migration individual e cresce em sequência dentro da versão MAJOR.
+  Cada novo script recebe o próximo MINOR disponível, sem lacunas ou reuso.
+- **Sequência contínua**: dentro do mesmo MAJOR, incremente o MINOR exatamente
+  em um. Para uma mudança incompatível, incremente o MAJOR exatamente em um e
+  reinicie o MINOR em zero. Por exemplo, `V1.0` → `V1.1` → `V1.2` e, quando
+  houver uma mudança incompatível, `V1.2` → `V2.0`. Não pule versões como
+  `V1.0` → `V1.2` ou `V1.0` → `V3.0`.
+- As versões devem ser coordenadas entre as branches: antes de criar uma
+  migration, sincronize com `develop` e reserve o próximo número com a pessoa
+  responsável pela coordenação das migrations.
 - **Atenção**: Use exatamente dois underlines `__` entre a versão e o nome descritivo.
 
 ---
 
 ## 2. Regras de Ouro de Migrations
 
-1. **Scripts são Imutáveis**: Uma vez criada e aplicada, uma migration NUNCA deve ser alterada. Correções futuras devem ocorrer em uma nova versão sequencial subsequente.
+1. **Scripts são Imutáveis**: Uma vez aplicada em ambiente compartilhado, uma migration NUNCA deve ser renomeada, alterada ou removida. Correções futuras devem ocorrer em uma nova versão sequencial subsequente. Antes de regularizar nomes antigos, consulte `flyway_schema_history` em todos os ambientes compartilhados.
 2. **Proibido DDL Automático do Hibernate**: O Hibernate não deve criar nem alterar tabelas (`spring.jpa.hibernate.ddl-auto=validate` ou `none`). Todo DDL pertence ao Flyway.
 3. **Compatibilidade ANSI SQL (H2 e Produção)**:
    - Utilize tipos SQL padrão compatíveis com H2 e PostgreSQL/MySQL (ex: `BIGINT`, `VARCHAR(n)`, `INT`, `BOOLEAN`, `TIMESTAMP`).

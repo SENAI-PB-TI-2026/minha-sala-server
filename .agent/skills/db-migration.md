@@ -6,14 +6,17 @@ Procedimento seguro para criar e aplicar alterações no banco de dados do `minh
 
 ## Passo a Passo
 
-1. **Checagem de Sequencial**:
+1. **Checagem e reserva da versão**:
    - Liste os arquivos existentes em `src/main/resources/db/migration/`.
-   - Identifique o maior número de versão atual (ex: se existem `V1` e `V2`, o próximo será `V3`).
+   - Use o formato `V{MAJOR}.{MINOR}__{descricao_em_snake_case}.sql`.
+   - Sincronize a branch com `develop` e reserve com a pessoa coordenadora o próximo MINOR livre dentro do MAJOR vigente. Não reutilize nem pule números.
+   - Dentro do mesmo MAJOR, incremente MINOR exatamente em um. Para uma mudança incompatível, incremente MAJOR exatamente em um e reinicie MINOR em zero. Exemplo: `V1.0` → `V1.1` → `V1.2` → `V2.0`; `V1.0` → `V1.2` e `V1.0` → `V3.0` são inválidos.
 2. **Definição do Nome do Arquivo**:
-   - Formato: `V{n}__{descricao_em_snake_case}.sql`
+   - Formato: `V{major}.{minor}__{descricao_em_snake_case}.sql`
    - Exemplos:
-     - `V3__create_reservas_table.sql`
-     - `V4__add_bloco_to_salas.sql`
+     - `V1.0__create_reservas_table.sql`
+     - `V1.1__add_bloco_to_salas.sql`
+   - Não renomeie, altere ou remova migrations já aplicadas em ambiente compartilhado. Consulte `flyway_schema_history` antes de qualquer regularização de nomes existentes.
 3. **Escrita do Script SQL**:
    - Use comandos DDL padrão ANSI:
      ```sql
