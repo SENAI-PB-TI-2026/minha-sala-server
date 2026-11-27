@@ -12,10 +12,6 @@ public interface BloqueioRepository extends JpaRepository<Bloqueio, Long> {
     @Query("SELECT b FROM Bloqueio b JOIN FETCH b.sala WHERE b.dataInicio <= :fim AND b.dataFim >= :inicio")
     List<Bloqueio> findByPeriodo(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
 
-    @Query("""
-            SELECT DISTINCT b.sala.id FROM Bloqueio b
-            WHERE b.dataInicio <= :data AND b.dataFim >= :data
-              AND (:salaId IS NULL OR b.sala.id = :salaId)
-            """)
-    List<Long> buscarIdsSalasBloqueadas(@Param("data") LocalDate data, @Param("salaId") Long salaId);
+    @Query("SELECT b FROM Bloqueio b WHERE b.sala.id = :salaId AND b.dataInicio <= :data AND b.dataFim >= :data")
+    List<Bloqueio> findBySalaIdAndData(@Param("salaId") Long salaId, @Param("data") LocalDate data);
 }
