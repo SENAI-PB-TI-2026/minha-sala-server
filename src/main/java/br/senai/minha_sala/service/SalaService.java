@@ -64,18 +64,28 @@ public class SalaService {
     /** Persiste uma nova sala, descartando qualquer ID fornecido pelo cliente. */
     @Transactional
     public SalaResponse criar(SalaRequest dados) {
-        Sala sala = new Sala(null, dados.nome(), dados.capacidade(), dados.tipo(), dados.recursos());
+        Sala sala = new Sala(null, dados.nome(), dados.capacidade(), dados.tipo(), dados.recursos(), true);
         return toResponse(salaRepository.save(sala));
     }
 
     /** Atualiza nome e capacidade de uma sala existente, preservando seu ID. */
     @Transactional
     public SalaResponse atualizar(Long id, SalaRequest dados) {
-        Sala sala = buscarEntidadePorId(id);
+        Sala sala = salaRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
         sala.setNome(dados.nome());
         sala.setCapacidade(dados.capacidade());
         sala.setTipo(dados.tipo());
         sala.setRecursos(dados.recursos());
+        return toResponse(salaRepository.save(sala));
+    }
+
+    /** Inativa uma sala existente e retorna seus dados atualizados. */
+    @Transactional
+    public SalaResponse inativar(Long id) {
+        Sala sala = salaRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
+        sala.setAtivo(false);
         return toResponse(salaRepository.save(sala));
     }
 
@@ -85,7 +95,7 @@ public class SalaService {
         salaRepository.delete(buscarEntidadePorId(id));
     }
 
-    /** Consulta salas ativas, bloqueios e ocupações registradas dentro do período especificado. */
+    /** Consulta salas (inclusive inativas), bloqueios e ocupações registradas dentro do período especificado. */
     public ConsultaOcupacaoSalasResponse consultarOcupacaoPorPeriodo(LocalDate inicio, LocalDate fim) {
         if (inicio == null || fim == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "As datas de início e fim do período devem ser informadas");
@@ -135,6 +145,7 @@ public class SalaService {
     public OcupacaoResponse criarOcupacao(Long salaId, OcupacaoRequest dados) {
         Sala sala = salaRepository.findByIdForUpdate(salaId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
+        validarSalaAtiva(sala);
         if (dados.quantidadeAlunos() > sala.getCapacidade()) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -166,6 +177,7 @@ public class SalaService {
             return toOcupacaoResponse(existente);
         }
 
+        validarSalaAtiva(sala);
         if (aula.getTurma() != null && aula.getTurma().getQuantidadeAlunos() > sala.getCapacidade()) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -205,6 +217,13 @@ public class SalaService {
         ocupacao.setDescricao("Aula: " + nomeTurma + " (" + aula.getDocente() + ")");
 
         return toOcupacaoResponse(ocupacaoRepository.save(ocupacao));
+    }
+
+    private void validarSalaAtiva(Sala sala) {
+        if (!sala.isAtivo()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Não é possível registrar ocupação para uma sala inativa");
+        }
     }
 
     private void validarRecursoObrigatorio(Sala sala, String recursoObrigatorio) {
@@ -265,6 +284,6 @@ public class SalaService {
     }
 
     private SalaResponse toResponse(Sala sala) {
-        return new SalaResponse(sala.getId(), sala.getNome(), sala.getCapacidade(), sala.getTipo(), sala.getRecursos());
+        return new SalaResponse(sala.getId(), sala.getNome(), sala.getCapacidade(), sala.getTipo(), sala.getRecursos(), sala.isAtivo());
     }
 }
