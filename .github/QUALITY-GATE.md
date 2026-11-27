@@ -18,3 +18,30 @@ Este fluxo de CI é mantido pelo professor, não é uma atividade avaliativa e n
 3. Preservar proteções vigentes. Exigir os checks de Dependency Review, Secret Scan e Build e inicializacao; exigir análise CodeQL com alertas de segurança altos ou críticos, revisar a baseline e manter PMD/Checkstyle informativos.
 4. Exigir aprovação do proprietário para mudanças do CI, aprovação da última alteração por outro revisor e restringir bypass ao professor/admin autorizado. Não exigir checks que ainda não estejam disponíveis na branch.
 5. Não usar segredos de produção, `pull_request_target` para executar código de PR, permissões de escrita desnecessárias ou auto-merge. A aplicação não deve ser exposta externamente nesta etapa.
+
+## SonarQube Cloud (fase diagnóstica)
+
+A análise de manutenibilidade, confiabilidade, segurança, hotspots, complexidade,
+duplicação e dívida técnica é automática nos PRs pela integração nativa do
+SonarQube Cloud com GitHub. Ela tem finalidade pedagógica, sem exigir testes
+automatizados, JaCoCo ou cobertura nesta fase.
+
+- Projeto: [minha-sala-server](https://sonarcloud.io/dashboard?id=SENAI-PB-TI-2026_minha-sala-server).
+- Os PRs #27 e #28 apresentaram o check `SonarCloud Code Analysis` aprovado;
+  no PR #28, a cobertura de código novo reportada foi 0%, sem reprovação.
+- Mantenha a análise automática; não adicione um segundo scanner Maven ou
+  workflow de análise para o mesmo projeto sem antes coordenar a troca de modo.
+  A integração nativa não requer um token Sonar nos workflows do repositório.
+- Não configure cobertura como condição de aceite nesta fase. Nas configurações
+  do SonarQube Cloud, confirme que o Quality Gate ativo não exige cobertura;
+  se necessário, crie um gate pedagógico sem essa condição, associe-o ao projeto
+  em Quality Gates e confirme a associação. Não torne o check obrigatório nem
+  altere regras de proteção sem autorização docente.
+- A análise automática dos PRs está confirmada. A baseline e a análise
+  independente das branches main/develop devem ser conferidas no painel;
+  ausência de check em um push não equivale a aprovação da branch.
+- Após autorização pedagógica futura, revisar as metas de cobertura e, se for
+  necessário migrar para análise por CI, desativar Automatic Analysis antes de
+  configurar o scanner, proteger credenciais e preservar a análise de PRs.
+
+Referência: https://docs.sonarsource.com/sonarqube-cloud/
