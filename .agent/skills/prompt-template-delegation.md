@@ -21,7 +21,7 @@ Todo prompt enviado para a agente Desenvolvedora Java deve seguir esta estrutura
   - `MÉTODO` `/rota` -> [Status HTTP e Retorno esperado]
 
 ### 🗄️ Banco de Dados (Flyway)
-- Criar migration `V{n}__{descricao}.sql` contendo: [DDL ou descrição das colunas/tabelas].
+- Criar migration `V{MAJOR}.{MINOR}__{descricao_em_snake_case}.sql` contendo: [DDL ou descrição das colunas/tabelas]. Reservar o próximo MINOR com a pessoa coordenadora.
 
 ### ⚠️ Restrições Estritas do Projeto (Lembrete)
 - NÃO implementar autenticação, login, senhas ou tokens.

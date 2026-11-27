@@ -7,8 +7,8 @@ Não modifica o Flyway, o POM, as migrations existentes nem exige testes/cobertu
 
 ## Como interpretar os checks
 
-- **Convenção e histórico**: procura nomes fora do padrão didático
-  `V1__cria_tabela.sql` (também permite versões numéricas segmentadas e
+- **Convenção e histórico**: procura nomes fora do padrão do projeto
+  `V1.0__cria_tabela.sql` (versões MAJOR.MINOR; também permite versões numéricas segmentadas e
   `R__descricao.sql` para repeatables), versões numéricas equivalentes, novas
   versões anteriores à maior versão da base e edição, remoção ou renomeação
   de scripts versionados. No PR, usa a base real e a árvore de merge prevista.
