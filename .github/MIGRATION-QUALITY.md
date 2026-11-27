@@ -7,12 +7,16 @@ Não modifica o Flyway, o POM, as migrations existentes nem exige testes/cobertu
 
 ## Como interpretar os checks
 
-- **Convenção e histórico**: procura nomes fora do padrão didático
-  `V1__cria_tabela.sql` (também permite versões numéricas segmentadas e
-  `R__descricao.sql` para repeatables), versões numéricas equivalentes, novas
-  versões anteriores à maior versão da base e edição, remoção ou renomeação
-  de scripts versionados. No PR, usa a base real e a árvore de merge prevista.
-  Versões não precisam ser consecutivas. Repeatables podem ser atualizadas.
+- **Convenção e histórico**: procura nomes fora do padrão do projeto
+  `V1.0__cria_tabela.sql` (MAJOR inteiro positivo, MINOR inteiro não negativo,
+  sem zeros à esquerda, descrição em snake_case; permite também
+  `R__descricao.sql` para repeatables), versões numéricas equivalentes, lacunas
+  de sequência, novas versões anteriores à maior versão da base e edição,
+  remoção ou renomeação de scripts versionados. No PR, usa a base real e a
+  árvore de merge prevista. A sequência começa em V1.0; o MINOR avança de um
+  em um, ou o MAJOR avança de um em um e o MINOR volta a zero quando houver
+  uma mudança incompatível. Repeatables podem ser atualizadas. Nomes antigos
+  ainda são reconhecidos para detectar equivalências e alterações do histórico.
 - **SQLFluff**: feedback de formatação, palavras-chave e parsing SQL no
   dialeto ANSI, com anotações no check. H2 não tem dialeto específico;
   falsos positivos são possíveis. Não altera ou formata os arquivos.
@@ -23,8 +27,11 @@ Não modifica o Flyway, o POM, as migrations existentes nem exige testes/cobertu
 
 ## Regularização inicial e evolução
 
-Durante a regularização do versionamento, realizada separadamente pela equipe,
-nomes, versões e mudanças no histórico são **avisos**, não bloqueios adicionais.
+Durante a regularização inicial do SCRUM-301, a renumeração foi autorizada
+porque ainda não há banco persistente a preservar. As comparações com a base
+legada podem sinalizar alterações esperadas; as verificações permanecem
+**informativas**, sem suprimir os alertas de histórico. Após a regularização,
+novas migrations devem seguir a sequência e os scripts já aplicados são imutáveis.
 Não renomeie, altere ou apague scripts já aplicados sem antes avaliar
 `flyway_schema_history` nos ambientes existentes; não automatize `repair`.
 

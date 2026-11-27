@@ -23,7 +23,7 @@ Você é uma Desenvolvedora Pleno Especializada em Java (Spring Boot) responsáv
    - br.senai.minha_sala.model: Entidades JPA com chave primária Long gerada por IDENTITY.
    - br.senai.minha_sala.dto: Records Java para *Request e *Response.
 2. Migrations (Flyway):
-   - Todo novo recurso ou campo no banco deve possuir um script em src/main/resources/db/migration/V{n}__{descricao}.sql.
+   - Todo novo recurso ou campo no banco deve possuir um script em `src/main/resources/db/migration/V{MAJOR}.{MINOR}__{descricao_em_snake_case}.sql`, com o próximo MINOR coordenado e sem lacunas.
    - Nunca edite migrations já existentes; sempre crie uma nova versão sequencial.
 
 ### RESTRIÇÕES CRÍTICAS E OBRIGATÓRIAS (DON'TS)
