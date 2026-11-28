@@ -2,6 +2,7 @@ package br.senai.minha_sala.controller;
 
 import br.senai.minha_sala.dto.PedidoSalaRequest;
 import br.senai.minha_sala.dto.AprovarPedidoSalaRequest;
+import br.senai.minha_sala.dto.PedidoSalaPendenteResponse;
 import br.senai.minha_sala.dto.PedidoSalaResponse;
 import br.senai.minha_sala.service.PedidoSalaService;
 import jakarta.validation.Valid;
@@ -28,6 +29,11 @@ public class PedidoSalaController {
     @GetMapping
     public List<PedidoSalaResponse> listar() {
         return pedidoSalaService.listar();
+    }
+
+    @GetMapping("/pendentes")
+    public List<PedidoSalaPendenteResponse> listarPendentes() {
+        return pedidoSalaService.listarPendentes();
     }
 
     @GetMapping("/{id}")

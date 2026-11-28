@@ -2,6 +2,8 @@ package br.senai.minha_sala.service;
 
 import br.senai.minha_sala.dto.PedidoSalaRequest;
 import br.senai.minha_sala.dto.PedidoSalaResponse;
+import br.senai.minha_sala.dto.PedidoSalaPendenteResponse;
+import br.senai.minha_sala.dto.AulaResponse;
 import br.senai.minha_sala.model.PedidoSala;
 import br.senai.minha_sala.model.StatusPedido;
 import br.senai.minha_sala.repository.AulaRepository;
@@ -29,6 +31,12 @@ public class PedidoSalaService {
 
     public List<PedidoSalaResponse> listar() {
         return pedidoSalaRepository.findAll().stream().map(this::toResponse).toList();
+    }
+
+    public List<PedidoSalaPendenteResponse> listarPendentes() {
+        return pedidoSalaRepository.findByStatusWithAula(StatusPedido.PENDENTE).stream()
+                .map(this::toPendenteResponse)
+                .toList();
     }
 
     public PedidoSalaResponse buscarPorId(Long id) {
@@ -59,6 +67,14 @@ public class PedidoSalaService {
 
     private PedidoSalaResponse toResponse(PedidoSala pedido) {
         return new PedidoSalaResponse(pedido.getId(), pedido.getAula().getId(), pedido.getSolicitante(),
+                pedido.getNecessidade(), pedido.getStatus());
+    }
+
+    private PedidoSalaPendenteResponse toPendenteResponse(PedidoSala pedido) {
+        var aula = pedido.getAula();
+        AulaResponse aulaResponse = new AulaResponse(aula.getId(), aula.getTurma().getId(), aula.getDocente(),
+                aula.getData(), aula.getInicio(), aula.getFim(), aula.getRecursoObrigatorio());
+        return new PedidoSalaPendenteResponse(pedido.getId(), aulaResponse, pedido.getSolicitante(),
                 pedido.getNecessidade(), pedido.getStatus());
     }
 }
