@@ -6,10 +6,8 @@ O gerenciamento de esquema relacional no `minha-sala-server` é estritamente con
 
 ## 1. Localização e Nomenclatura dos Scripts
 
-- Os scripts SQL comuns devem estar em `src/main/resources/db/migration/`.
-  Quando a sintaxe exigir variantes por banco, coloque-as em
-  `src/main/resources/db/vendor/h2/` e `src/main/resources/db/vendor/postgresql/`
-  com o mesmo nome e versão. Cada banco carrega somente a sua variante.
+- Todos os scripts SQL devem estar em:
+  `src/main/resources/db/migration/`
 - Padrão de versionamento: `V{MAJOR}.{MINOR}__{descricao_em_snake_case}.sql`.
   Exemplo: `V1.0__create_reservas.sql`, `V1.1__add_bloco_to_salas.sql`.
   A sequência começa em V1.0; MAJOR é positivo e MINOR não negativo, sem zeros

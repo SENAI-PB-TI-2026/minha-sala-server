@@ -46,7 +46,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -d '' -t files < <(git ls-files -z -- 'src/main/resources/db/migration' 'src/main/resources/db/vendor' | python3 -c 'import sys; sys.stdout.buffer.write(b"".join(p+b"\0" for p in sys.stdin.buffer.read().split(b"\0") if p.lower().endswith(b".sql") and not __import__("os").path.islink(p)))')
+          mapfile -d '' -t files < <(git ls-files -z -- 'src/main/resources/db/migration' | python3 -c 'import sys; sys.stdout.buffer.write(b"".join(p+b"\0" for p in sys.stdin.buffer.read().split(b"\0") if p.lower().endswith(b".sql") and not __import__("os").path.islink(p)))')
           if (( ${#files[@]} == 0 )); then
             echo "Nenhuma migration SQL para lint."
             exit 0

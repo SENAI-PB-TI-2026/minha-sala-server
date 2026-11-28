@@ -113,9 +113,11 @@ No Linux e no macOS, use `./mvnw` no lugar de `./mvnw.cmd`. Na IDE, selecione o 
 
 Ao iniciar a aplicação com `dev-postgres`, o Flyway aplica os scripts de `src/main/resources/db/migration` no PostgreSQL. O Hibernate valida o esquema com `ddl-auto=validate`. O volume mantém também a tabela `flyway_schema_history`.
 
-O Flyway combina as migrations comuns em `db/migration` com as do banco em `db/vendor/h2` ou `db/vendor/postgresql`. A `V1.8` da SCRUM-301 mantém o SQL original e o checksum no H2. A variante PostgreSQL usa `ALTER COLUMN descricao SET DATA TYPE VARCHAR(519)`.
+H2 e PostgreSQL usam a mesma sequência da SCRUM-301 em `src/main/resources/db/migration`. A `V1.8` usa `ALTER COLUMN descricao SET DATA TYPE VARCHAR(519)` nos dois bancos.
 
-Antes de reutilizar um banco iniciado em uma branch anterior à SCRUM-301, confira as versões em `flyway_schema_history`. Se houver divergência após a renumeração, preserve os dados e alinhe o tratamento do histórico com a equipe. Use um banco separado para validar a instalação do zero.
+Em bancos que já aplicaram a redação anterior da `V1.8`, o Flyway detecta a mudança de checksum de `787945023` para `1036457528`. A proposta de transição depende da aprovação da equipe. Com a aplicação parada, faça backup do banco e confirme que `ocupacoes.descricao` já é `VARCHAR(519)` e que essa é a única divergência no histórico. Nessas condições, a pessoa responsável pode executar `flyway repair` com as mesmas migrations e a mesma configuração de banco e esquema da aplicação. Valide o histórico e a inicialização antes de voltar a usar o banco. Qualquer outra divergência precisa ser investigada antes do reparo.
+
+Bancos novos aplicam a `V1.8` diretamente. Divergências de numeração de bancos anteriores à SCRUM-301 precisam de avaliação separada pela equipe.
 
 ### H2 como banco padrão
 

@@ -1,7 +1,6 @@
 # Migration Quality — diagnóstico docente
 
-A CI analisa as migrations SQL comuns em `src/main/resources/db/migration` e as
-variantes em `src/main/resources/db/vendor` de forma
+A CI analisa as migrations SQL em `src/main/resources/db/migration` de forma
 automática nos PRs para `develop` e `main`, nos pushes dessas branches e em
 execuções manuais. Não utiliza credenciais, banco de produção ou serviços pagos.
 Não modifica o Flyway, o POM, as migrations existentes nem exige testes/cobertura.
@@ -18,10 +17,6 @@ Não modifica o Flyway, o POM, as migrations existentes nem exige testes/cobertu
   em um, ou o MAJOR avança de um em um e o MINOR volta a zero quando houver
   uma mudança incompatível. Repeatables podem ser atualizadas. Nomes antigos
   ainda são reconhecidos para detectar equivalências e alterações do histórico.
-  A sequência é conferida por banco. A relocação de uma migration comum para
-  H2 preserva o histórico quando o nome e o conteúdo ficam iguais. Uma variante
-  nova para PostgreSQL com versão anterior à maior versão da base gera um
-  apontamento para revisão.
 - **SQLFluff**: feedback de formatação, palavras-chave e parsing SQL no
   dialeto ANSI, com anotações no check. H2 não tem dialeto específico;
   falsos positivos são possíveis. Não altera ou formata os arquivos.
