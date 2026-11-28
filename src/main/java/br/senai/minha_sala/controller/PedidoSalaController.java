@@ -1,6 +1,7 @@
 package br.senai.minha_sala.controller;
 
 import br.senai.minha_sala.dto.PedidoSalaRequest;
+import br.senai.minha_sala.dto.AprovarPedidoSalaRequest;
 import br.senai.minha_sala.dto.PedidoSalaPendenteResponse;
 import br.senai.minha_sala.dto.PedidoSalaResponse;
 import br.senai.minha_sala.service.PedidoSalaService;
@@ -38,6 +39,12 @@ public class PedidoSalaController {
     @GetMapping("/{id}")
     public PedidoSalaResponse buscarPorId(@PathVariable Long id) {
         return pedidoSalaService.buscarPorId(id);
+    }
+
+    @PostMapping("/{id}/aprovar")
+    public PedidoSalaResponse aprovar(@PathVariable Long id,
+                                      @Valid @RequestBody AprovarPedidoSalaRequest dados) {
+        return pedidoSalaService.aprovar(id, dados.salaId());
     }
 
     @PostMapping
