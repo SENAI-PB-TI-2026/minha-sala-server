@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -35,6 +36,12 @@ public class Bloqueio {
 
     @Column(name = "data_fim", nullable = false)
     private LocalDate dataFim;
+
+    @Column(name = "inicio")
+    private LocalTime inicio;
+
+    @Column(name = "fim")
+    private LocalTime fim;
 
     @Column(nullable = false)
     private String motivo;

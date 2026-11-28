@@ -132,7 +132,8 @@ public class SalaService {
                         b.getSala().getId(),
                         b.getSala().getNome(),
                         b.getDataInicio(),
-                        b.getDataFim(),
+                        b.getInicio(),
+                        b.getFim(),
                         b.getMotivo()
                 ))
                 .toList();
@@ -149,13 +150,17 @@ public class SalaService {
     public BloqueioResponse criarBloqueio(Long salaId, BloqueioRequest dados) {
         Sala sala = salaRepository.findByIdForUpdate(salaId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala não encontrada"));
-        if (ocupacaoRepository.existsBySalaIdAndDataBetween(salaId, dados.dataInicio(), dados.dataFim())) {
+        if (!ocupacaoRepository.buscarIdsSalasOcupadas(dados.data(), dados.inicio(), dados.fim(), salaId, null).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Não é possível bloquear a sala: existe uma ocupação no período informado");
+                    "Não é possível bloquear a sala: existe uma ocupação no horário informado");
         }
-        Bloqueio bloqueio = new Bloqueio(null, sala, dados.dataInicio(), dados.dataFim(), dados.motivo());
+        if (!bloqueioRepository.buscarIdsSalasBloqueadas(dados.data(), dados.inicio(), dados.fim(), salaId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Já existe bloqueio sobreposto para a sala neste horário");
+        }
+        Bloqueio bloqueio = new Bloqueio(null, sala, dados.data(), dados.data(), dados.inicio(), dados.fim(), dados.motivo());
         Bloqueio salvo = bloqueioRepository.save(bloqueio);
-        return new BloqueioResponse(salvo.getId(), sala.getId(), sala.getNome(), salvo.getDataInicio(), salvo.getDataFim(), salvo.getMotivo());
+        return new BloqueioResponse(salvo.getId(), sala.getId(), sala.getNome(), salvo.getDataInicio(), salvo.getInicio(), salvo.getFim(), salvo.getMotivo());
     }
 
     /** Cadastra uma ocupação direta na sala validando bloqueios e sobreposições. */
@@ -211,8 +216,8 @@ public class SalaService {
         LocalTime fim = aula.getFim();
 
         // Verifica se a sala está bloqueada nesta data
-        if (!bloqueioRepository.buscarIdsSalasBloqueadas(data, salaId).isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "A sala está bloqueada na data selecionada");
+        if (!bloqueioRepository.buscarIdsSalasBloqueadas(data, inicio, fim, salaId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A sala está bloqueada neste horário");
         }
 
         // Verifica conflito de horário com outras ocupações na mesma sala e dia
@@ -284,8 +289,8 @@ public class SalaService {
     private Map<Long, String> buscarConflitos(LocalDate data, LocalTime inicio, LocalTime fim,
                                               Long salaId, Long ignorarOcupacaoId) {
         Map<Long, String> conflitos = new HashMap<>();
-        for (Long id : bloqueioRepository.buscarIdsSalasBloqueadas(data, salaId)) {
-            conflitos.put(id, "A sala possui bloqueio fixo ativo na data informada");
+        for (Long id : bloqueioRepository.buscarIdsSalasBloqueadas(data, inicio, fim, salaId)) {
+            conflitos.put(id, "A sala possui bloqueio ativo no horário informado");
         }
         for (Long id : ocupacaoRepository.buscarIdsSalasOcupadas(data, inicio, fim, salaId, ignorarOcupacaoId)) {
             conflitos.putIfAbsent(id, "Ocupação sobreposta não permitida para o mesmo local e horário");
