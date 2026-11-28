@@ -36,6 +36,16 @@ O nome deve conter texto, a capacidade deve ser positiva, o tipo é obrigatório
 
 Separe os itens de `recursos` por vírgula, ponto e vírgula ou quebra de linha. Cada item pode começar com uma quantidade inteira positiva seguida de espaço, como `30 computadores`. Para verificar a compatibilidade, a API ignora o prefixo de quantidade, os espaços nas pontas e diferenças de maiúsculas e minúsculas nos dois campos. Os nomes `computador` e `computadores` são equivalentes, assim como `projetor` e `projetores`. Os demais nomes devem coincidir por inteiro após a normalização.
 
+## Bloqueios de sala
+
+Para registrar um período reservado, envie `POST /salas/{salaId}/bloqueios` com a data, os horários e o motivo confirmado pela unidade. `motivo` aceita somente `SESI` ou `EJA`:
+
+```json
+{"data":"2026-12-10","inicio":"08:00","fim":"12:00","motivo":"SESI"}
+```
+
+O fim deve ser posterior ao início. O bloqueio impede novas ocupações apenas quando elas se sobrepõem ao intervalo cadastrado; intervalos adjacentes são permitidos. A criação retorna 201 e motivos diferentes de `SESI` e `EJA` retornam 400. Bloqueios antigos, anteriores ao cadastro dos horários, continuam ocupando o dia inteiro.
+
 ## API de turmas
 
 | Método | Rota | Resultado |

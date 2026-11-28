@@ -2,6 +2,7 @@ package br.senai.minha_sala.repository;
 
 import br.senai.minha_sala.model.Bloqueio;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,7 +16,9 @@ public interface BloqueioRepository extends JpaRepository<Bloqueio, Long> {
     @Query("""
             SELECT DISTINCT b.sala.id FROM Bloqueio b
             WHERE b.dataInicio <= :data AND b.dataFim >= :data
+              AND (b.inicio IS NULL OR (b.inicio < :fim AND b.fim > :inicio))
               AND (:salaId IS NULL OR b.sala.id = :salaId)
             """)
-    List<Long> buscarIdsSalasBloqueadas(@Param("data") LocalDate data, @Param("salaId") Long salaId);
+    List<Long> buscarIdsSalasBloqueadas(@Param("data") LocalDate data, @Param("inicio") LocalTime inicio,
+                                        @Param("fim") LocalTime fim, @Param("salaId") Long salaId);
 }

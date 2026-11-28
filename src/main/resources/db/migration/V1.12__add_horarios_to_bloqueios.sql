@@ -1,0 +1,2 @@
+ALTER TABLE bloqueios ADD COLUMN inicio TIME;
+ALTER TABLE bloqueios ADD COLUMN fim TIME;
