@@ -132,6 +132,7 @@ public class SalaService {
                         b.getSala().getId(),
                         b.getSala().getNome(),
                         b.getDataInicio(),
+                        b.getDataFim(),
                         b.getInicio(),
                         b.getFim(),
                         b.getMotivo()
@@ -160,7 +161,7 @@ public class SalaService {
         }
         Bloqueio bloqueio = new Bloqueio(null, sala, dados.data(), dados.data(), dados.inicio(), dados.fim(), dados.motivo());
         Bloqueio salvo = bloqueioRepository.save(bloqueio);
-        return new BloqueioResponse(salvo.getId(), sala.getId(), sala.getNome(), salvo.getDataInicio(), salvo.getInicio(), salvo.getFim(), salvo.getMotivo());
+        return new BloqueioResponse(salvo.getId(), sala.getId(), sala.getNome(), salvo.getDataInicio(), salvo.getDataFim(), salvo.getInicio(), salvo.getFim(), salvo.getMotivo());
     }
 
     /** Cadastra uma ocupação direta na sala validando bloqueios e sobreposições. */

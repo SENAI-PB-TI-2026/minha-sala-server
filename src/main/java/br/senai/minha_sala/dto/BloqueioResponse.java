@@ -7,7 +7,8 @@ public record BloqueioResponse(
         Long id,
         Long salaId,
         String salaNome,
-        LocalDate data,
+        LocalDate dataInicio,
+        LocalDate dataFim,
         LocalTime inicio,
         LocalTime fim,
         String motivo
